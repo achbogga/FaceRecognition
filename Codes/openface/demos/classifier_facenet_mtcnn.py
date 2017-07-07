@@ -30,6 +30,7 @@ import string
 import csv
 import tensorflow as tf
 import align.detect_face
+import align.extract_image_chips
 import random
 
 
@@ -169,8 +170,8 @@ def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_pl
             temp_y = (int(bb[1])+int(bb[3]+1))
             if temp_y < 0:
                 temp_y-=1 
-            #alignedFace = (align.align_dataset_mtcnn.extract_image_chips(rgbImg,np.transpose(points), img_size, 0.37))[0]
-            alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
+            alignedFace = (align.extract_image_chips.extract_image_chips(cropped,np.transpose(points), img_size, 0.37))[0]
+            #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
             if (args.deblurr > 0):
                 blurrness = variance_of_laplacian(alignedFace)
                 if (blurrness < 50):
