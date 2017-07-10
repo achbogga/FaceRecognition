@@ -172,7 +172,7 @@ def runEvaluation (mypath, dumppath, threshold, testOnly):
 
 		start_time = time.time()
 		if not testOnly:
-			command = "/home/ovuser/FaceRecognition/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 182 --margin 44 --random_order --gpu_memory_fraction 0.5 " 
+			command = "/home/ovuser/FaceRecognition/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --random_order --gpu_memory_fraction 0.5 " 
 			print(command)
 			os.system(command)
 

@@ -29,7 +29,6 @@ import pickle
 import string
 import csv
 import tensorflow as tf
-import extract_image_chips
 import align.detect_face
 import random
 
@@ -65,7 +64,7 @@ from sklearn.multiclass import OutputCodeClassifier
 from os import listdir
 
 import facenet
-
+import align_image
 
 fileDir = os.path.dirname(os.path.realpath(__file__))
 modelDir = os.path.join(fileDir, '..', 'models')
@@ -81,18 +80,6 @@ def variance_of_laplacian(image):
 def frange(start, stop, step):
         return takewhile(lambda x: x< stop, count(start, step))
 
-def InitializeMTCNN ():
-    sleep(random.random())
-    with tf.Graph().as_default():
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.6)
-        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
-        with sess.as_default():
-            pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
-
-
-    # Add a random key to the filename to allow alignment using multiple processes
-    random_key = np.random.randint(0, high=99999)
-    return pnet, rnet, onet
 
 
 def generateAugmentedImageData (img):
@@ -115,78 +102,29 @@ def generateAugmentedImageData (img):
         return expImageList
 
 
-def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, multiple=False):
+def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_placeholder):
     start = time.time()
     rgbImg = misc.imread(imgPath, mode='RGB')
     if rgbImg is None:
         raise Exception("Unable to load image: {}".format(imgPath))
 
     reps = []
-    if multiple:
-        bbs, blm_points = align.detect_face.bulk_detect_face(rgbImg, minsize, pnet, rnet, onet, mtcnn_threshold, factor)
-    else:
-        bounding_boxes, points = align.detect_face.detect_face(rgbImg, minsize, pnet, rnet, onet, mtcnn_threshold, factor)
-        nrof_faces = bounding_boxes.shape[0]
-        if nrof_faces == 0:
-                print("Expanded Face Search ...")
-                expImageList = generateAugmentedImageData(rgbImg)
-                bFound = False
-                for expImage in expImageList:
-                        bounding_boxes, points = align.detect_face.detect_face(expImage, minsize, pnet, rnet, onet, mtcnn_threshold, factor)
-                        nrof_faces = bounding_boxes.shape[0]
-                        if nrof_faces > 0:
-                                print("Expanded Search Successful !!!")
-                                bFound = True
-                                rgbImg = expImage
-                                break
-
-                if not bFound:
-                        print("Expanded Search Fail !!!")
-                        return []
-
-
-        if nrof_faces > 0:
-            det = bounding_boxes[:,0:4]
-            img_size = np.asarray(rgbImg.shape)[0:2]
-            if nrof_faces>1:
-                bounding_box_size = (det[:,2]-det[:,0])*(det[:,3]-det[:,1])
-                img_center = img_size / 2
-                offsets = np.vstack([ (det[:,0]+det[:,2])/2-img_center[1], (det[:,1]+det[:,3])/2-img_center[0] ])
-                offset_dist_squared = np.sum(np.power(offsets,2.0),0)
-                index = np.argmax(bounding_box_size-offset_dist_squared*2.0) # some extra weight on the centering
-                det = det[index,:]
-            det = np.squeeze(det)
-            margin = 32
-            bb = np.zeros(4, dtype=np.int32)
-            bb[0] = np.maximum(det[0] - margin/2, 0)
-            bb[1] = np.maximum(det[1] - margin/2, 0)
-            bb[2] = np.minimum(det[2] + margin/2, img_size[1])
-            bb[3] = np.minimum(det[3] + margin/2, img_size[0])
-            cropped = rgbImg[bb[1]:bb[3],bb[0]:bb[2],:]
-            #Actual alignment with rotation using landmark points is performed with with this change. -Achyut
-            #bb2 = dlib.rectangle(left=int(bb[0]), top=int(bb[1]), right=int(bb[2]), bottom=int(bb[3]))
-            temp_x = (int(bb[0])+int(bb[2])+1)
-            if temp_x < 0:
-                temp_x-=1
-            temp_y = (int(bb[1])+int(bb[3]+1))
-            if temp_y < 0:
-                temp_y-=1 
-            alignedFace = (extract_image_chips.extract_image_chips(cropped,np.transpose(points), img_size, 0.37))[0]
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
-            if (args.deblurr > 0):
-                blurrness = variance_of_laplacian(alignedFace)
-                if (blurrness < 50):
-                        print("Sharpening Image...")
-                        gaussian = cv2.GaussianBlur(alignedFace, (19, 19), 20.0)
-                        alignedFace = cv2.addWeighted(alignedFace, 1.5, gaussian, -0.5, 0)
+    alignedFace = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    if (args.deblurr > 0):
+        blurrness = variance_of_laplacian(alignedFace)
+        if (blurrness < 50):
+            print("Sharpening Image...")
+            gaussian = cv2.GaussianBlur(alignedFace, (19, 19), 20.0)
+            alignedFace = cv2.addWeighted(alignedFace, 1.5, gaussian, -0.5, 0)
 
-            alignedFace = facenet.prewhiten(alignedFace)
+    alignedFace = facenet.prewhiten(alignedFace)
 
-            # Run forward pass to calculate embeddings
-            feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
-            emb_list = sess.run(embeddings, feed_dict=feed_dict)
-            rep = emb_list[0]
-            reps.append((temp_x/2, rep))
+    # Run forward pass to calculate embeddings
+    feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
+    emb_list = sess.run(embeddings, feed_dict=feed_dict)
+    rep = emb_list[0]
+    reps.append((temp_x/2, rep))
 
     sreps = sorted(reps, key=lambda x: x[0])
     return sreps
@@ -235,7 +173,7 @@ def infer(args, multiple=False):
 
     model_dir = args.model_dir[0]
 
-    pnet, rnet, onet = InitializeMTCNN()
+    #pnet, rnet, onet = InitializeMTCNN()
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
     with tf.Graph().as_default():
         with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
@@ -272,7 +210,7 @@ def infer(args, multiple=False):
                 start = time.time()
 
        	        #reps = getRep_mtcnn(img, sess, embeddings, images_placeholder, phase_train_placeholder, multiple)
-                reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, multiple)
+                reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder)
 	        if reps == None or reps == []:
 		    person = "Undetected"
 		    confidence = 0.0
