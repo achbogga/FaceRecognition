@@ -110,7 +110,7 @@ def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_pl
 
     reps = []
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
-    alignedFace = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
     if (args.deblurr > 0):
         blurrness = variance_of_laplacian(alignedFace)
         if (blurrness < 50):
@@ -124,7 +124,7 @@ def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_pl
     feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
     emb_list = sess.run(embeddings, feed_dict=feed_dict)
     rep = emb_list[0]
-    reps.append((temp_x/2, rep))
+    reps.append((bb2_center_x, rep))
 
     sreps = sorted(reps, key=lambda x: x[0])
     return sreps
