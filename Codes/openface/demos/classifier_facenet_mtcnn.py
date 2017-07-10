@@ -258,7 +258,7 @@ def infer(args, multiple=False):
 	        gtName = "Unknown"
                 start = time.time()
                 #reps = getRep_mtcnn(img, sess, embeddings, images_placeholder, phase_train_placeholder, multiple)
-                reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, multiple)
+                reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder)
 
                 if reps == None or reps == []:
                     person = "Undetected"
@@ -308,7 +308,7 @@ def infer(args, multiple=False):
                 gtName = "Unknown"
             start = time.time()
             #reps = getRep_mtcnn(img, sess, embeddings, images_placeholder, phase_train_placeholder, multiple)
-            reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, multiple)
+            reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder)
 
             if reps == None or reps == []:
                 person = "Undetected"
