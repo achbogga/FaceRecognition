@@ -29,8 +29,8 @@ import pickle
 import string
 import csv
 import tensorflow as tf
+import extract_image_chips
 import align.detect_face
-import align.extract_image_chips
 import random
 
 
@@ -156,11 +156,12 @@ def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_pl
                 index = np.argmax(bounding_box_size-offset_dist_squared*2.0) # some extra weight on the centering
                 det = det[index,:]
             det = np.squeeze(det)
+            margin = 32
             bb = np.zeros(4, dtype=np.int32)
-            bb[0] = np.maximum(det[0]-args.margin/2, 0)
-            bb[1] = np.maximum(det[1]-args.margin/2, 0)
-            bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
-            bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
+            bb[0] = np.maximum(det[0] - margin/2, 0)
+            bb[1] = np.maximum(det[1] - margin/2, 0)
+            bb[2] = np.minimum(det[2] + margin/2, img_size[1])
+            bb[3] = np.minimum(det[3] + margin/2, img_size[0])
             cropped = rgbImg[bb[1]:bb[3],bb[0]:bb[2],:]
             #Actual alignment with rotation using landmark points is performed with with this change. -Achyut
             #bb2 = dlib.rectangle(left=int(bb[0]), top=int(bb[1]), right=int(bb[2]), bottom=int(bb[3]))
@@ -170,7 +171,7 @@ def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_pl
             temp_y = (int(bb[1])+int(bb[3]+1))
             if temp_y < 0:
                 temp_y-=1 
-            alignedFace = (align.extract_image_chips.extract_image_chips(cropped,np.transpose(points), img_size, 0.37))[0]
+            alignedFace = (extract_image_chips.extract_image_chips(cropped,np.transpose(points), img_size, 0.37))[0]
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
             if (args.deblurr > 0):
                 blurrness = variance_of_laplacian(alignedFace)
