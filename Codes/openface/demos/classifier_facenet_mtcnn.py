@@ -104,10 +104,14 @@ def generateAugmentedImageData (img):
 
 def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_placeholder):
     start = time.time()
-    rgbImg = misc.imread(imgPath, mode='RGB')
+    try:
+        rgbImg = misc.imread(imgPath, mode='RGB')
+    except IOError:
+        raise Exception("Not an image: {}".format(imgPath))
+        pass
     if rgbImg is None:
         raise Exception("Unable to load image: {}".format(imgPath))
-
+        pass
     reps = []
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
     alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
