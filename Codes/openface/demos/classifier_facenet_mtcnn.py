@@ -31,7 +31,7 @@ import csv
 import tensorflow as tf
 import align.detect_face
 import random
-
+import shutil
 
 from time import sleep
 
@@ -114,7 +114,11 @@ def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_pl
         pass
     reps = []
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
-    alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    #alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    alignedFace = rgbImg
+    (h, w) = alignedFace.shape[:2]
+    bb2_center_x = w / 2
+    bb2_center_y =  h / 2
     if (args.deblurr > 0):
         blurrness = variance_of_laplacian(alignedFace)
         if (blurrness < 50):
@@ -203,8 +207,16 @@ def infer(args, multiple=False):
            repsList = []
            labsList = []
            repsZero = np.zeros([128])
+           rawPath = os.path.abspath(os.path.join(args.imgs[0], os.pardir))
+           alignedPath = rawPath+'_aligned_temp'
+           if not os.path.exists(alignedPath):
+               os.makedirs(alignedPath)
+               #pre-alignment for optimized evaluation performance
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.5 " 
+               print(command)
+	       os.system(command)
            ptr = open(args.output[0], 'w')
-           for imgDir in args.imgs:
+           for imgDir in os.listdir(alignedPath):
              imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
 	     for img in imgList:
 	    	strs = string.split(img, '/');
@@ -248,11 +260,18 @@ def infer(args, multiple=False):
 				pos_count += 1
 			else:
 				neg_count += 1
-
            print(known_people)
-			
+           rawPath = os.path.abspath(os.path.join(args.unimgs[0], os.pardir)) 
+           alignedPath = rawPath+'_aligned_temp'
+           if not os.path.exists(alignedPath):
+               os.makedirs(alignedPath)
+               #pre-alignment for optimized evaluation performance
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.5 " 
+               print(command)
+	       os.system(command)
+          
            unknown_people = Set()
-           for imgDir in args.unimgs:
+           for imgDir in os.listdir(alignedPath):
             imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
 	    for img in imgList:
                 strs = string.split(img, '/');
@@ -304,7 +323,16 @@ def infer(args, multiple=False):
            wild_neg_count = 0
            wild_not_count = 0
            ptr = open(args.wild_output[0], 'w')
-           for img in args.wdimgs:
+           rawPath = os.path.abspath(os.path.join(args.wdimgs[0], os.pardir)) 
+           alignedPath = rawPath+'_aligned_temp'
+           if not os.path.exists(alignedPath):
+               os.makedirs(alignedPath)
+               #pre-alignment for optimized evaluation performance
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.5 " 
+               print(command)
+	       os.system(command)
+          
+           for img in os.listdir(alignedPath):
             strs = string.split(img, '/');
             imgName = strs[-1]
 	    gtName = imgName[:-8]
