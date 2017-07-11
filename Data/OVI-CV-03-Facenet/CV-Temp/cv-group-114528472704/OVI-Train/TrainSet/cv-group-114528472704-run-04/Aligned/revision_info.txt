@@ -1,6 +1,6 @@
-arguments: /home/ovuser/FaceRecognition/Codes/facenet/src/align/align_dataset_mtcnn.py /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Temp/cv-group-114528472704/OVI-Train/TrainSet/cv-group-114528472704-run-04/raw /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Temp/cv-group-114528472704/OVI-Train/TrainSet/cv-group-114528472704-run-04/Aligned --image_size 182 --margin 44 --random_order --gpu_memory_fraction 0.5
+arguments: /home/ovuser/FaceRecognition/Codes/facenet/src/align/align_dataset_mtcnn.py /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Temp/cv-group-114528472704/OVI-Train/TrainSet/cv-group-114528472704-run-04/raw /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Temp/cv-group-114528472704/OVI-Train/TrainSet/cv-group-114528472704-run-04/Aligned --image_size 160 --margin 32 --random_order --gpu_memory_fraction 0.5
 --------------------
-git hash: ee5de933815e5b7cc25a646fe23e5f0d076e795c
+git hash: fe75be8fa41c24d35932bf3f3b44376e356d5d51
 --------------------
 diff --git a/.gitignore b/.gitignore
 old mode 100644
