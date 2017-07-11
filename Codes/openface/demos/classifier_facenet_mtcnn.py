@@ -104,13 +104,14 @@ def generateAugmentedImageData (img):
 
 def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_placeholder):
     start = time.time()
+    #rgbImg = None
     try:
         rgbImg = misc.imread(imgPath, mode='RGB')
     except IOError:
-        raise Exception("Not an image: {}".format(imgPath))
+        raise IOError ("Not an image: {}".format(imgPath))
         pass
     if rgbImg is None:
-        raise Exception("Unable to load image: {}".format(imgPath))
+        raise ValueError ("Unable to load image: {}".format(imgPath))
         pass
     reps = []
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
@@ -212,12 +213,21 @@ def infer(args, multiple=False):
            if not os.path.exists(alignedPath):
                os.makedirs(alignedPath)
                #pre-alignment for optimized evaluation performance
-               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.5 " 
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 " 
                print(command)
 	       os.system(command)
            ptr = open(args.output[0], 'w')
-           for imgDir in os.listdir(alignedPath):
-             imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+           try:
+            imgDirList = [alignedPath + "/" + f for f in listdir(alignedPath)]
+           except OSError:
+            print ("not a directory ignored")
+            pass	
+           for imgDir in imgDirList:
+             try:
+              imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+             except OSError:
+              print ("not a directory ignored")
+              pass	  
 	     for img in imgList:
 	    	strs = string.split(img, '/');
 	        gtName = strs[-2]
@@ -266,13 +276,22 @@ def infer(args, multiple=False):
            if not os.path.exists(alignedPath):
                os.makedirs(alignedPath)
                #pre-alignment for optimized evaluation performance
-               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.5 " 
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 " 
                print(command)
 	       os.system(command)
           
            unknown_people = Set()
-           for imgDir in os.listdir(alignedPath):
-            imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+           try:
+            imgDirList = [alignedPath + "/" + f for f in listdir(alignedPath)]
+           except OSError:
+            print ("not a directory ignored")
+            pass	
+           for imgDir in imgDirList:
+            try:
+             imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+            except OSError:
+             print ("not a directory ignored")
+             pass	  
 	    for img in imgList:
                 strs = string.split(img, '/');
 	        gtName = strs[-2]
@@ -328,11 +347,15 @@ def infer(args, multiple=False):
            if not os.path.exists(alignedPath):
                os.makedirs(alignedPath)
                #pre-alignment for optimized evaluation performance
-               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.5 " 
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 " 
                print(command)
 	       os.system(command)
-          
-           for img in os.listdir(alignedPath):
+           try:
+            imgList = [alignedPath + "/" + f for f in listdir(alignedPath)]
+           except OSError:
+            print ("not a directory ignored")
+            pass	
+           for img in imgList:
             strs = string.split(img, '/');
             imgName = strs[-1]
 	    gtName = imgName[:-8]
