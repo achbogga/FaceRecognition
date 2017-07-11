@@ -213,9 +213,10 @@ def infer(args, multiple=False):
            if not os.path.exists(alignedPath):
                os.makedirs(alignedPath)
                #pre-alignment for optimized evaluation performance
-               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 " 
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
                print(command)
 	       os.system(command)
+               os.system('rm -f ' + alignedPath + '/revision_info.txt')
            ptr = open(args.output[0], 'w')
            try:
             imgDirList = [alignedPath + "/" + f for f in listdir(alignedPath)]
@@ -276,10 +277,11 @@ def infer(args, multiple=False):
            if not os.path.exists(alignedPath):
                os.makedirs(alignedPath)
                #pre-alignment for optimized evaluation performance
-               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 " 
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
                print(command)
 	       os.system(command)
-          
+               os.system('rm -f ' + alignedPath + '/revision_info.txt')
+                
            unknown_people = Set()
            try:
             imgDirList = [alignedPath + "/" + f for f in listdir(alignedPath)]
@@ -347,9 +349,10 @@ def infer(args, multiple=False):
            if not os.path.exists(alignedPath):
                os.makedirs(alignedPath)
                #pre-alignment for optimized evaluation performance
-               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 " 
+               command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
                print(command)
 	       os.system(command)
+               os.system('rm -f ' + alignedPath + '/revision_info.txt')
            try:
             imgList = [alignedPath + "/" + f for f in listdir(alignedPath)]
            except OSError:
