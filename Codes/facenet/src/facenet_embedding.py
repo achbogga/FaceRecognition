@@ -76,7 +76,7 @@ def main(args):
                 names[name] = count
                 count = count + 1
 
-            facenet.load_model(args.model_dir, meta_file, ckpt_file)
+            facenet.load_model(args.model_dir)
 
             # Get input and output tensors
             images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")

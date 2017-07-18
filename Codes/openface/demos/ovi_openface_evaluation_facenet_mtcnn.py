@@ -154,9 +154,9 @@ def runEvaluation (mypath, dumppath, threshold, testOnly):
         tempPath = [trainPath + "/" + f for f in listdir(trainPath)]
         dumpTempPath = [dumpTrainPath + "/" + f for f in listdir(dumpTrainPath)]
 
-	runFile = "/home/ovuser/FaceRecognition/Codes/openface/demos/classifier_facenet_mtcnn.py"
+	runFile = "/FR/Codes/openface/demos/classifier_facenet_mtcnn.py"
 	wildPath = mypath + "/../../overflow"
-	networkPath = "/home/ovuser/FaceRecognition/Codes/facenet/models/CASIA-WebFace" 
+	networkPath = "/FR/models/CASIA-WebFace" 
 
         for p, d in zip(tempPath, dumpTempPath):
 		alignedPath = d + "/" + "Aligned"
@@ -172,11 +172,11 @@ def runEvaluation (mypath, dumppath, threshold, testOnly):
 
 		start_time = time.time()
 		if not testOnly:
-			command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --random_order --gpu_memory_fraction 0.4 " 
+			command = "/FR/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --random_order --gpu_memory_fraction 0.4 " 
 			print(command)
 			os.system(command)
 
-			command = "/home/ovuser/FaceRecognition/Codes/facenet/src/facenet_embedding.py " + networkPath + " " + alignedPath + " " + featurePath + " --image_size 160 --deblurr 0"
+			command = "/FR/Codes/facenet/src/facenet_embedding.py " + networkPath + " " + alignedPath + " " + featurePath + " --image_size 160 --deblurr 0"
 			print(command)
 			os.system(command)
 
