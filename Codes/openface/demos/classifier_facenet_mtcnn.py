@@ -353,7 +353,7 @@ def infer(args, multiple=False):
            os.system('rm -f ' + alignedPath + '/revision_info.txt')
            try:
             imgList = [alignedPath + "/" + f for f in listdir(alignedPath)]
-            print (imgList)
+            #print (imgList)
            except OSError:
             print ("not a directory ignored")
             pass	
