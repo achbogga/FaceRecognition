@@ -31,7 +31,7 @@ import csv
 import tensorflow as tf
 import align.detect_face
 import random
-
+import shutil
 
 from time import sleep
 
@@ -104,17 +104,22 @@ def generateAugmentedImageData (img):
 
 def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_placeholder):
     start = time.time()
+    #rgbImg = None
     try:
         rgbImg = misc.imread(imgPath, mode='RGB')
     except IOError:
-        raise Exception("Not an image: {}".format(imgPath))
+        raise IOError ("Not an image: {}".format(imgPath))
         pass
     if rgbImg is None:
-        raise Exception("Unable to load image: {}".format(imgPath))
+        raise ValueError ("Unable to load image: {}".format(imgPath))
         pass
     reps = []
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
-    alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    #alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    alignedFace = rgbImg
+    (h, w) = alignedFace.shape[:2]
+    bb2_center_x = w / 2
+    bb2_center_y =  h / 2
     if (args.deblurr > 0):
         blurrness = variance_of_laplacian(alignedFace)
         if (blurrness < 50):
@@ -203,9 +208,26 @@ def infer(args, multiple=False):
            repsList = []
            labsList = []
            repsZero = np.zeros([128])
+           rawPath = os.path.abspath(os.path.join(args.imgs[0], os.pardir))
+           alignedPath = rawPath+'_aligned_temp'
+           #os.makedirs(alignedPath)
+           #pre-alignment for optimized evaluation performance
+           command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
+           print(command)
+	   os.system(command)
+           os.system('rm -f ' + alignedPath + '/revision_info.txt')
            ptr = open(args.output[0], 'w')
-           for imgDir in args.imgs:
-             imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+           try:
+            imgDirList = [alignedPath + "/" + f for f in listdir(alignedPath)]
+           except OSError:
+            print ("not a directory ignored")
+            pass	
+           for imgDir in imgDirList:
+             try:
+              imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+             except OSError:
+              print ("not a directory ignored")
+              pass	  
 	     for img in imgList:
 	    	strs = string.split(img, '/');
 	        gtName = strs[-2]
@@ -248,12 +270,27 @@ def infer(args, multiple=False):
 				pos_count += 1
 			else:
 				neg_count += 1
-
            print(known_people)
-			
+           rawPath = os.path.abspath(os.path.join(args.unimgs[0], os.pardir)) 
+           alignedPath = rawPath+'_aligned_temp'
+           #pre-alignment for optimized evaluation performance
+           command = "/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
+           print(command)
+	   os.system(command)
+           os.system('rm -f ' + alignedPath + '/revision_info.txt')
+                
            unknown_people = Set()
-           for imgDir in args.unimgs:
-            imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+           try:
+            imgDirList = [alignedPath + "/" + f for f in listdir(alignedPath)]
+           except OSError:
+            print ("not a directory ignored")
+            pass	
+           for imgDir in imgDirList:
+            try:
+             imgList = [imgDir + "/" + f for f in listdir(imgDir)]	
+            except OSError:
+             print ("not a directory ignored")
+             pass	  
 	    for img in imgList:
                 strs = string.split(img, '/');
 	        gtName = strs[-2]
@@ -304,7 +341,23 @@ def infer(args, multiple=False):
            wild_neg_count = 0
            wild_not_count = 0
            ptr = open(args.wild_output[0], 'w')
-           for img in args.wdimgs:
+           #print (args.wdimgs)
+           rawPath = os.path.abspath(os.path.join(args.wdimgs[0], os.pardir)) 
+           #print (rawPath)
+           alignedPath = rawPath+'_aligned_temp'
+           #os.makedirs(alignedPath)
+           #pre-alignment for optimized evaluation performance
+           command = "/facenet/src/align/align_folder_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
+           print(command)
+	   os.system(command)
+           os.system('rm -f ' + alignedPath + '/revision_info.txt')
+           try:
+            imgList = [alignedPath + "/" + f for f in listdir(alignedPath)]
+            print (imgList)
+           except OSError:
+            print ("not a directory ignored")
+            pass	
+           for img in imgList:
             strs = string.split(img, '/');
             imgName = strs[-1]
 	    gtName = imgName[:-8]
@@ -313,7 +366,6 @@ def infer(args, multiple=False):
             start = time.time()
             #reps = getRep_mtcnn(img, sess, embeddings, images_placeholder, phase_train_placeholder, multiple)
             reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder)
-
             if reps == None or reps == []:
                 person = "Undetected"
                 confidence = 0.0
@@ -337,6 +389,7 @@ def infer(args, multiple=False):
                     print("{:150s}\t{:10s}\t{:10s}\t{}\t{}".format(img, gtName, person, confidence, (time.time() - start) * 1000))
                     ptr.write("%s\t%s\t%s\t%f\t%f\n" % (imgName, gtName, person, confidence, (time.time() - start) * 1000))
 		    if gtName == person:
+                        print ("Wild image...!")
 			wild_pos_count += 1
 		    else:
 			wild_neg_count += 1
@@ -347,32 +400,29 @@ def infer(args, multiple=False):
 			wild_pos_count += 1
 		    else:
 			wild_neg_count += 1
-
            ptr.close()
-
            fName = args.output[0] + ".reps.csv"
            ptr = open(fName, 'w')
            for rep in repsList:
 	    rep_str = ' '.join(str(e) for e in rep)
 	    ptr.write("%s\n" % rep_str)
            ptr.close()
-
            lName = args.output[0] + ".labels.csv"
            ptr = open(lName, 'w')
            for labs in labsList:
 	    ptr.write("%s\n" % labs)
            ptr.close()
 
-    print("Detection: {}".format(pos_count))
-    print("NotDetect: {} (NotDetected: {})".format(neg_count, not_count))
-    print("Total    : {}".format(pos_count + neg_count))
-    print("Accuracy: {}".format(float(pos_count) / float((pos_count + neg_count))))
+           print("Detection: {}".format(pos_count))
+           print("NotDetect: {} (NotDetected: {})".format(neg_count, not_count))
+           print("Total    : {}".format(pos_count + neg_count))
+           print("Accuracy: {}".format(float(pos_count) / float((pos_count + neg_count))))
 
-    print("Wild Images")
-    print("Detection: {}".format(wild_pos_count))
-    print("NotDetect: {} (NotDetected: {})".format(wild_neg_count, wild_not_count))
-    print("Total    : {}".format(wild_pos_count + wild_neg_count))
-    print("Accuracy: {}".format(float(wild_pos_count) / float((wild_pos_count + wild_neg_count))))
+           print("Wild Images")
+           print("Detection: {}".format(wild_pos_count))
+           print("NotDetect: {} (NotDetected: {})".format(wild_neg_count, wild_not_count))
+           print("Total    : {}".format(wild_pos_count + wild_neg_count))
+           print("Accuracy: {}".format(float(wild_pos_count) / float((wild_pos_count + wild_neg_count))))
 
 
 if __name__ == '__main__':
