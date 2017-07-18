@@ -156,7 +156,7 @@ def runEvaluation (mypath, dumppath, threshold, testOnly):
 
 	runFile = "/FR/Codes/openface/demos/classifier_facenet_mtcnn.py"
 	wildPath = mypath + "/../../overflow"
-	networkPath = "/FR/Codes/facenet/models/CASIA-WebFace" 
+	networkPath = "/FR/models/CASIA-WebFace" 
 
         for p, d in zip(tempPath, dumpTempPath):
 		alignedPath = d + "/" + "Aligned"
