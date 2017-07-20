@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-"""Performs face alignment and stores face thumbnails in the output directory."""
+#!/usr/bin/env python2
 # MIT License
 # 
 # Copyright (c) 2016 David Sandberg
@@ -83,7 +82,7 @@ def main(args):
     # Add a random key to the filename to allow alignment using multiple processes
     random_key = np.random.randint(0, high=99999)
     bounding_boxes_filename = os.path.join(output_dir, 'bounding_boxes_%05d.txt' % random_key)
-    alignment_count = 1
+    alignment_count = 0
     with open(bounding_boxes_filename, "w") as text_file:
         nrof_images_total = 0
         nrof_successfully_aligned = 0
@@ -129,34 +128,36 @@ def main(args):
                                 count += 1
                                 alignment_count += 1
                                 continue
-                                bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
-                                nrof_faces = bounding_boxes.shape[0]
-                                if nrof_faces>0:
-                                    det = bounding_boxes[:,0:4]
-                                    img_size = np.asarray(img.shape)[0:2]
-                                    if nrof_faces>1:
-                                        bounding_box_size = (det[:,2]-det[:,0])*(det[:,3]-det[:,1])
-                                        img_center = img_size / 2
-                                        offsets = np.vstack([ (det[:,0]+det[:,2])/2-img_center[1], (det[:,1]+det[:,3])/2-img_center[0] ])
-                                        offset_dist_squared = np.sum(np.power(offsets,2.0),0)
-                                        index = np.argmax(bounding_box_size-offset_dist_squared*2.0) # some extra weight on the centering
-                                        det = det[index,:]
-                                    det = np.squeeze(det)
-                                    bb = np.zeros(4, dtype=np.int32)
-                                    bb[0] = np.maximum(det[0]-args.margin/2, 0)
-                                    bb[1] = np.maximum(det[1]-args.margin/2, 0)
-                                    bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
-                                    bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
-                                    cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
-                                    #scaled = (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, 0.37))[0]
-                                    scaled = misc.imresize(cropped, (args.image_size, args.image_size), interp='bilinear')
-                                    #scaled = misc.imresize(scaled, (args.image_size, args.image_size), interp='bilinear')
-                                    nrof_successfully_aligned += 1
-                                    misc.imsave(imgName, scaled)
-                                    text_file.write('%s %d %d %d %d\n' % (imgName, bb[0], bb[1], bb[2], bb[3]))
-                                else:
-                                    print('Unable to align "%s"' % image_path)
-                                    text_file.write('%s\n' % (imgName))
+                            bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+			    img = (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37))[0]
+                            bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+                            nrof_faces = bounding_boxes.shape[0]
+                            if nrof_faces>0:
+                                det = bounding_boxes[:,0:4]
+                                img_size = np.asarray(img.shape)[0:2]
+                                if nrof_faces>1:
+                                    bounding_box_size = (det[:,2]-det[:,0])*(det[:,3]-det[:,1])
+                                    img_center = img_size / 2
+                                    offsets = np.vstack([ (det[:,0]+det[:,2])/2-img_center[1], (det[:,1]+det[:,3])/2-img_center[0] ])
+                                    offset_dist_squared = np.sum(np.power(offsets,2.0),0)
+                                    index = np.argmax(bounding_box_size-offset_dist_squared*2.0) # some extra weight on the centering
+                                    det = det[index,:]
+                                det = np.squeeze(det)
+                                bb = np.zeros(4, dtype=np.int32)
+                                bb[0] = np.maximum(det[0]-args.margin/2, 0)
+                                bb[1] = np.maximum(det[1]-args.margin/2, 0)
+                                bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
+                                bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
+			        cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
+
+			        scaled = misc.imresize(cropped, (args.image_size, args.image_size), interp='bilinear')
+			        #scaled = misc.imresize(scaled, (args.image_size, args.image_size), interp='bilinear')
+			        nrof_successfully_aligned += 1
+			        misc.imsave(imgName, scaled)
+			        text_file.write('%s %d %d %d %d\n' % (imgName, bb[0], bb[1], bb[2], bb[3]))
+			    else:
+			        print('Unable to align "%s"' % image_path)
+			        text_file.write('%s\n' % (imgName))
     if args.no_text_output is not None:
         os.system('rm -f ' + bounding_boxes_filename + ' revision_info.txt')                        
     print('Total number of raw images: %d' % nrof_images_total)

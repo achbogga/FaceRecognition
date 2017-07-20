@@ -75,7 +75,7 @@ def find_tfrom_between_shapes(from_shape, to_shape):
         return tran_m, tran_b
 
 
-def extract_image_chips(img, points, desired_size=256, padding=0):
+def extract_image_chips(img, points, desired_shape_l = 256, desired_shape_w = 256, padding=0):
         """
             crop and align face
         Parameters:
@@ -111,8 +111,8 @@ def extract_image_chips(img, points, desired_size=256, padding=0):
             to_points = []
 
             for i in range(int(math.ceil(len(shape)/2))):
-                x = (padding + mean_face_shape_x[i]) / (2 * padding + 1) * desired_size
-                y = (padding + mean_face_shape_y[i]) / (2 * padding + 1) * desired_size
+                x = (padding + mean_face_shape_x[i]) / (2 * padding + 1) * desired_shape_l
+                y = (padding + mean_face_shape_y[i]) / (2 * padding + 1) * desired_shape_w
                 to_points.append([x, y])
                 from_points.append([shape[2*i], shape[2*i+1]])
                 #print (len(to_points),len( from_points), to_points, from_points)
@@ -135,8 +135,8 @@ def extract_image_chips(img, points, desired_size=256, padding=0):
 
             from_center = [(shape[0]+shape[2])/2.0, (shape[1]+shape[3])/2.0]
             to_center = [0, 0]
-            to_center[1] = desired_size * 0.4
-            to_center[0] = desired_size * 0.5
+            to_center[1] = desired_shape_l * 0.4
+            to_center[0] = desired_shape_w * 0.5
 
             ex = to_center[0] - from_center[0]
             ey = to_center[1] - from_center[1]
@@ -145,7 +145,7 @@ def extract_image_chips(img, points, desired_size=256, padding=0):
             rot_mat[0][2] += ex
             rot_mat[1][2] += ey
 
-            chips = cv2.warpAffine(img, rot_mat, (desired_size, desired_size))
+            chips = cv2.warpAffine(img, rot_mat, (desired_shape_l, desired_shape_w))
             crop_imgs.append(chips)
 
         return crop_imgs

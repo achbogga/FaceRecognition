@@ -100,6 +100,9 @@ def main(args):
                         img = img[:,:,0:3]
     
                         bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+                        if (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37)):
+                            img = (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37))[0]
+                            bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
                         nrof_faces = bounding_boxes.shape[0]
                         if nrof_faces>0:
                             det = bounding_boxes[:,0:4]
@@ -118,7 +121,7 @@ def main(args):
                             bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
                             bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
                             cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
-                            #scaled = (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, 0.37))[0]
+
                             scaled = misc.imresize(cropped, (args.image_size, args.image_size), interp='bilinear')
                             #scaled = misc.imresize(scaled, (args.image_size, args.image_size), interp='bilinear')
                             nrof_successfully_aligned += 1
