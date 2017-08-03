@@ -164,7 +164,7 @@ if __name__ == '__main__':
            meta_file, ckpt_file = facenet.get_model_filenames(os.path.expanduser(model_dir))
            print('Metagraph file: %s' % meta_file)
            print('Checkpoint file: %s' % ckpt_file)
-           facenet.load_model(model_dir, meta_file, ckpt_file)
+           facenet.load_model(model_dir)
 
            threshold = args.threshold
 
