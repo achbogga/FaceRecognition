@@ -64,7 +64,7 @@ from sklearn.multiclass import OutputCodeClassifier
 from os import listdir
 
 import facenet
-import align_image
+#import align_image
 
 fileDir = os.path.dirname(os.path.realpath(__file__))
 modelDir = os.path.join(fileDir, '..', 'models')

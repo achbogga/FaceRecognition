@@ -40,7 +40,7 @@ import math
 import cv2
 from time import sleep
 
-def align_image(input_image, image_size = 182, margin = 44, gpu_memory_fraction = 0.5):
+def align_image(input_image, image_size = 160, margin = 32, gpu_memory_fraction = 0.5):
     sleep(random.random())
     #print('Creating networks and loading parameters')
     
@@ -63,6 +63,9 @@ def align_image(input_image, image_size = 182, margin = 44, gpu_memory_fraction 
     img = img[:,:,0:3]
 
     bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+    if (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37)):
+        img = (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37))[0]
+        bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
     nrof_faces = bounding_boxes.shape[0]
     if nrof_faces>0:
         det = bounding_boxes[:,0:4]
@@ -89,8 +92,8 @@ def align_image(input_image, image_size = 182, margin = 44, gpu_memory_fraction 
         if temp_y < 0:
             temp_y-=1
         bb2_center_x = temp_x/2
-        scaled = (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, 0.37))[0]
-        #scaled = misc.imresize(scaled, (image_size, image_size), interp='bilinear')
+        #scaled = (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, 0.37))[0]
+        scaled = misc.imresize(scaled, (image_size, image_size), interp='bilinear')
         return scaled, bb2_center_x
     else:
         print ("no face detected..\n")
