@@ -212,7 +212,7 @@ def infer(args, multiple=False):
            alignedPath = rawPath+'_aligned_temp'
            #os.makedirs(alignedPath)
            #pre-alignment for optimized evaluation performance
-           command = "/FR/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
+           command = "/home/ovuser/FaceRecognition/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
            print(command)
 	   os.system(command)
            os.system('rm -f ' + alignedPath + '/revision_info.txt')
@@ -274,7 +274,7 @@ def infer(args, multiple=False):
            rawPath = os.path.abspath(os.path.join(args.unimgs[0], os.pardir)) 
            alignedPath = rawPath+'_aligned_temp'
            #pre-alignment for optimized evaluation performance
-           command = "/FR/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
+           command = "/home/ovuser/FaceRecognition/Codes/facenet/src/align/align_dataset_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
            print(command)
 	   os.system(command)
            os.system('rm -f ' + alignedPath + '/revision_info.txt')
@@ -347,7 +347,7 @@ def infer(args, multiple=False):
            alignedPath = rawPath+'_aligned_temp'
            #os.makedirs(alignedPath)
            #pre-alignment for optimized evaluation performance
-           command = "/FR/Codes/facenet/src/align/align_folder_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
+           command = "/home/ovuser/FaceRecognition/Codes/facenet/src/align/align_folder_mtcnn.py " + rawPath + " " + alignedPath + "  --image_size 160 --margin 32 --gpu_memory_fraction 0.33 --no_text_output " 
            print(command)
 	   os.system(command)
            os.system('rm -f ' + alignedPath + '/revision_info.txt')
