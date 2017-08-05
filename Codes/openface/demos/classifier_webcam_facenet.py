@@ -24,6 +24,11 @@
 # To run this file from the openface home dir:
 # ./demo/classifier_webcam.py <path-to-your-classifier>
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import sys
 
 import time
 
@@ -34,7 +39,9 @@ import cv2
 import os
 import pickle
 import tensorflow as tf
-import align.detect_face
+import detect_face
+import extract_image_chips
+import math
 import random
 import shutil
 
@@ -56,56 +63,166 @@ mtcnn_rectangle_size_threshold = 100
 fileDir = os.path.dirname(os.path.realpath(__file__))
 modelDir = os.path.join(fileDir, '..', 'models')
 
+def align_image(input_image, image_size = 160, margin = 32, gpu_memory_fraction = 0.5):
+    sleep(random.random())
+    #print('Creating networks and loading parameters')
+    
+    with tf.Graph().as_default():
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction)
+        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+        with sess.as_default():
+            pnet, rnet, onet = detect_face.create_mtcnn(sess, None)
+    
+    minsize = 20 # minimum size of face
+    threshold = [ 0.6, 0.7, 0.7 ]  # three steps's threshold
+    factor = 0.709 # scale factor
+    img = input_image
+    if img.ndim<2:
+        print('Unable to align "%s"' % image_path)
+        text_file.write('%s\n' % (output_filename))
+        #continue
+    if img.ndim == 2:
+        img = facenet.to_rgb(img)
+    img = img[:,:,0:3]
 
-def getRep_facenet(imgPath, sess, embeddings, images_placeholder, phase_train_placeholder):
+    bounding_boxes, points = detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+    if (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, image_size, 0.37)):
+        img = (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, image_size, 0.37))[0]
+        bounding_boxes, points = detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+    nrof_faces = bounding_boxes.shape[0]
+    if nrof_faces==0:
+	return []
+    for i in range(nrof_faces):
+        det = bounding_boxes[i, 0:4]
+        img_size = np.asarray(img.shape)[0:2]
+
+        bb = np.zeros(4, dtype=np.int32)
+        bb[0] = np.maximum(det[0]-margin/2, 0)
+        bb[1] = np.maximum(det[1]-margin/2, 0)
+        bb[2] = np.minimum(det[2]+margin/2, img_size[1])
+        bb[3] = np.minimum(det[3]+margin/2, img_size[0])
+        cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
+        #bb2 = dlib.rectangle(left=int(bb[0]), top=int(bb[1]), right=int(bb[2]), bottom=int(bb[3]))
+        temp_x = (int(bb[0])+int(bb[2])+1)
+        if temp_x < 0:
+            temp_x-=1
+        temp_y = (int(bb[1])+int(bb[3]+1))
+        if temp_y < 0:
+            temp_y-=1
+        bb2_center_x = temp_x/2
+        #scaled = (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, 0.37))[0]
+        scaled = misc.imresize(cropped, (image_size, image_size), interp='bilinear')
+        return scaled, bb2_center_x
+
+def initialize_tf(gpu_memory_fraction):
+    sleep(random.random())
+    #print('Creating networks and loading parameters')
+    
+    with tf.Graph().as_default():
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction)
+        sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+        with sess.as_default():
+            pnet, rnet, onet = detect_face.create_mtcnn(sess, None)
+    return pnet, rnet, onet
+    
+
+def getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet):
     start = time.time()
+    image_size = 160
     #rgbImg = None
     try:
-        rgbImg = misc.imread(imgPath, mode='RGB')
+        #rgbImg = misc.imread(imgPath, mode='RGB')
+	rgbImg = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     except IOError:
-        raise IOError ("Not an image: {}".format(imgPath))
-        pass
+        #raise IOError ("Not an image: {}".format(imgPath))
+        print (IOError)
+	pass
     if rgbImg is None:
-        raise ValueError ("Unable to load image: {}".format(imgPath))
-        pass
+        #raise ValueError ("Unable to load image: {}".format(imgPath))
+        print (ValueError)
+	pass
     reps = []
             #alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
-    alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
-    #alignedFace = rgbImg
-    (h, w) = alignedFace.shape[:2]
-    #bb2_center_x = w / 2
-    bb2_center_y =  h / 2
-    if (args.deblurr > 0):
-        blurrness = variance_of_laplacian(alignedFace)
-        if (blurrness < 50):
-            print("Sharpening Image...")
-            gaussian = cv2.GaussianBlur(alignedFace, (19, 19), 20.0)
-            alignedFace = cv2.addWeighted(alignedFace, 1.5, gaussian, -0.5, 0)
+    #alignedFace, bb2_center_x = align_image.align_image(rgbImg, image_size = 160, margin = 32, gpu_memory_fraction = 0.5)
+    
+    minsize = 20 # minimum size of face
+    threshold = [ 0.6, 0.7, 0.7 ]  # three steps's threshold
+    factor = 0.709 # scale factor
+    input_image = rgbImg
+    margin = 32
+    img = input_image
+    if img.ndim<2:
+        print('Unable to align "%s"' % image_path)
+        text_file.write('%s\n' % (output_filename))
+        #continue
+    if img.ndim == 2:
+        img = facenet.to_rgb(img)
+    img = img[:,:,0:3]
 
-    alignedFace = facenet.prewhiten(alignedFace)
+    bounding_boxes, points = detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+    #if (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, image_size, 0.37)):
+    #    img = (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, image_size, 0.37))[0]
+    #    bounding_boxes, points = detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+    nrof_faces = bounding_boxes.shape[0]
+    if nrof_faces==0:
+	return []
+    for i in range(nrof_faces):
+        det = bounding_boxes[i, 0:4]
+        img_size = np.asarray(img.shape)[0:2]
 
-    # Run forward pass to calculate embeddings
-    feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
-    emb_list = sess.run(embeddings, feed_dict=feed_dict)
-    rep = emb_list[0]
-    reps.append((bb2_center_x, rep))
+        bb = np.zeros(4, dtype=np.int32)
+        bb[0] = np.maximum(det[0]-margin/2, 0)
+        bb[1] = np.maximum(det[1]-margin/2, 0)
+        bb[2] = np.minimum(det[2]+margin/2, img_size[1])
+        bb[3] = np.minimum(det[3]+margin/2, img_size[0])
+        cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
+        #bb2 = dlib.rectangle(left=int(bb[0]), top=int(bb[1]), right=int(bb[2]), bottom=int(bb[3]))
+        temp_x = (int(bb[0])+int(bb[2])+1)
+        if temp_x < 0:
+            temp_x-=1
+        temp_y = (int(bb[1])+int(bb[3]+1))
+        if temp_y < 0:
+            temp_y-=1
+        bb2_center_x = temp_x/2
+        #scaled = (extract_image_chips.extract_image_chips(img,np.transpose(points), image_size, 0.37))[0]
+        scaled = misc.imresize(cropped, (image_size, image_size), interp='bilinear')
+        alignedFace = scaled
+    
+	#alignedFace = rgbImg
+	(h, w) = alignedFace.shape[:2]
+	#bb2_center_x = w / 2
+	bb2_center_y =  h / 2
+	if (args.deblurr > 0):
+		blurrness = variance_of_laplacian(alignedFace)
+		if (blurrness < 50):
+			print("Sharpening Image...")
+			gaussian = cv2.GaussianBlur(alignedFace, (19, 19), 20.0)
+			alignedFace = cv2.addWeighted(alignedFace, 1.5, gaussian, -0.5, 0)
 
-    sreps = sorted(reps, key=lambda x: x[0])
-    return sreps
+	alignedFace = facenet.prewhiten(alignedFace)
+
+	# Run forward pass to calculate embeddings
+	feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
+	emb_list = sess.run(embeddings, feed_dict=feed_dict)
+	rep = emb_list[0]
+	reps.append((bb2_center_x, rep))
+
+    #sreps = sorted(reps, key=lambda x: x[0])
+    return reps
 
 
 
-def infer(img, args, sess, embeddings, image_placeholder, phase_train_placeholder, le, clf):
+def infer(img, args, sess, embeddings, image_placeholder, phase_train_placeholder, le, clf, pnet, rnet, onet):
 
-    reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder)
+    reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet)
     #reps = getRep_mtcnn_align(img, sess, embeddings, images_placeholder, phase_train_placeholder, detector)
     persons = []
     confidences = []
     boxes = []
     for rep in reps:
-	box = rep[1]
-	rep = rep[0]
-	if (rep == None):
+	box = rep[0]
+	rep = rep[1]
+	if (rep.all() == None):
         	persons.append(None)
         	confidences.append(0.0)
 		boxes.append(box)
@@ -152,7 +269,7 @@ if __name__ == '__main__':
     video_capture.set(3, args.width)
     video_capture.set(4, args.height)
 
-    #pnet, rnet, onet = InitializeMTCNN()
+    pnet, rnet, onet = initialize_tf(args.gpu_memory_fraction)
 
     with open(args.classifierModel, 'r') as f:
         (le, clf) = pickle.load(f)  # le - label and clf - classifer
@@ -180,8 +297,9 @@ if __name__ == '__main__':
     	   confidenceList = []
     	   while True:
         	ret, frame = video_capture.read()
-        	persons, confidences, boxes = infer(frame, args, sess, embeddings, images_placeholder, phase_train_placeholder, le, clf)
-        	print "P: " + str(persons) + " C: " + str(confidences)
+		frame = misc.imresize(frame, (160,160), interp='bilinear')
+        	persons, confidences, boxes = infer(frame, args, sess, embeddings, images_placeholder, phase_train_placeholder, le, clf,pnet,rnet,onet)
+        	print ("P: " + str(persons) + " C: " + str(confidences))
         	try:
             		# append with two floating point precision
             		confidenceList.append('%.2f' % confidences[0])
