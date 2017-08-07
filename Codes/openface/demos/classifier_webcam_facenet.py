@@ -161,7 +161,7 @@ def infer(img, args, sess, embeddings, image_placeholder, phase_train_placeholde
     for rep in reps:
 	box = rep[1]
 	rep = rep[0]
-	if (rep == None):
+	if (rep.all() == None):
         	persons.append(None)
         	confidences.append(0.0)
 		boxes.append(box)
@@ -219,7 +219,8 @@ if __name__ == '__main__':
            meta_file, ckpt_file = facenet.get_model_filenames(os.path.expanduser(model_dir))
            print('Metagraph file: %s' % meta_file)
            print('Checkpoint file: %s' % ckpt_file)
-           facenet.load_model(model_dir, meta_file, ckpt_file)
+           #facenet.load_model(model_dir, meta_file, ckpt_file)
+           facenet.load_model(model_dir)
 
            threshold = args.threshold
 
