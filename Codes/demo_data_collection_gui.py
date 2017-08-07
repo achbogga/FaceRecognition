@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from builtins import open
+from builtins import str
+# etc., as needed
+
+from future import standard_library
+standard_library.install_aliases()
+
 import os
 from shutil import copyfile
 import tkinter as tk # python 3
@@ -85,9 +98,11 @@ class SampleApp(tk.Tk):
 
     def __init__(self, text_datafile, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-        self.scr_w = self.winfo_screenwidth()
-        self.scr_h = self.winfo_screenheight()
-        #self.title_font = tkfont.Font(family='Helvetica', size=self.scr_w/90, weight="bold", slant="italic")
+        #self.scr_w = self.winfo_screenwidth()
+        #self.scr_h = self.winfo_screenheight()
+        self.scr_w = 1366
+	self.scr_h = 768
+	#self.title_font = tkfont.Font(family='Helvetica', size=self.scr_w/90, weight="bold", slant="italic")
         #GUI params to control styling
         self.bg_color = 'white'
         self.font_for_titles = ('Arial',int(self.scr_w/96), 'bold')
@@ -321,5 +336,5 @@ class PageTwo(tk.Frame):
             print('flag is reset for some reason!')
 
 if __name__ == "__main__":
-    app = SampleApp('_1.csv')
+    app = SampleApp('text_data.csv')
     app.mainloop()
