@@ -1,4 +1,5 @@
 import os
+from shutil import copyfile
 import tkinter as tk # python 3
 from tkinter import *
 from tkinter import messagebox
@@ -12,7 +13,6 @@ from tkinter import Widget
 import numpy as np
 import cv2
 import time
-
 #import Tkinter as tk     # python 2
 #import tkFont as tkfont  # python 2
 
@@ -62,28 +62,51 @@ class webcam:
         cap.release()
         out.release()
         cv2.destroyAllWindows()
+    def disp_video(self, video_src, fps = 30):
+        cap = cv2.VideoCapture(video_src)
+        init_time = time.time()
+        timeout = init_time+11
+        for i in range(fps*10):
+            ret, frame = cap.read()
+
+            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            cv2.imshow('frame',frame)
+            #cv2.waitKey(int(1000/fps) & 0xFF)
+            if (cv2.waitKey(int(1000/fps)) & 0xFF == ord('q')) or (time.time() > timeout):
+                break
+            
+        cap.release()
+        cv2.destroyAllWindows()
+
+
 
 class SampleApp(tk.Tk):
 
     def __init__(self, text_datafile, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-
-        self.title_font = tkfont.Font(family='Helvetica', size=18, weight="bold", slant="italic")
+        self.scr_w = self.winfo_screenwidth()
+        self.scr_h = self.winfo_screenheight()
+        #self.title_font = tkfont.Font(family='Helvetica', size=self.scr_w/90, weight="bold", slant="italic")
         #GUI params to control styling
         self.bg_color = 'white'
-        self.font_for_titles = ('Arial',14, 'bold')
-        self.font_for_text = ('Arial',12)
+        self.font_for_titles = ('Arial',int(self.scr_w/96), 'bold')
+        self.font_for_text = ('Arial',int(self.scr_w/120))
+        self.font_for_buttons = ('Arial', int(self.scr_w/96), 'bold')
+        self.font_for_entries = ('Arial', int(self.scr_w/90))
         
         # the container is where we'll stack a bunch of frames
         # on top of each other, then the one we want visible
         # will be raised above the others
         container = tk.Frame(self)
         
-        self.scr_w = self.winfo_screenwidth()
-        self.scr_h = self.winfo_screenheight()
-        self.text_wrap_l = self.scr_w - 20
+        
+        self.text_wrap_l = int(self.scr_w*0.98)
         self.fg_color = 'black'
-        self.padx = 10
+        self.text_padx = int(self.scr_w*0.0053)
+        self.button_padx = int(self.scr_w*0.04)
+        self.pady = int(self.scr_h*0.00652)
+        #
         self.configure(bg=self.bg_color)
         
         container.pack(side="top", fill="both", expand=True)
@@ -94,7 +117,7 @@ class SampleApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (StartPage, PageOne, PageTwo):
+        for F in (StartPage, PageTwo):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -106,6 +129,8 @@ class SampleApp(tk.Tk):
             frame.configure(bg=self.bg_color)
             frame.grid(row=0, column=0, sticky="nsew")
         
+        if (os.stat(text_datafile).st_size == 0):
+            copyfile(os.path.join(os.getcwd(),'_2.csv'), text_datafile)
         self.text_datafile = text_datafile
         self.bsd = np.vectorize(self.byte_string_decoder, otypes = ['str'])
         self.update_textdb(self.text_datafile)
@@ -116,15 +141,19 @@ class SampleApp(tk.Tk):
         entries = []
         for field in fields:
             row = Frame(frame, bg=self.bg_color)
-            lab = Label(row, bg=self.bg_color, width=35, text=field, anchor='w')
-            ent = Entry(row, width=15, bg=self.bg_color)
-            if field == 'Passwd (2 eng words with a single space)':
+            lab = Label(row, bg=self.bg_color, width=int(self.scr_w*0.01823), text=field, anchor='w', font=self.font_for_entries)
+            ent = Entry(row, width=int(self.scr_w*0.00782), bg=self.bg_color, font=self.font_for_entries)
+            if field == 'Password':
                 ent.configure(show="*")
-            row.pack(side=TOP, fill=X, padx=self.padx, pady=5)
+            row.pack(side=TOP, fill=X, padx=self.text_padx, pady=self.pady)
             lab.pack(side=LEFT)
-            ent.pack(side=LEFT, padx=self.padx, expand=YES, fill=X)
+            ent.pack(side=LEFT, padx=self.text_padx, expand=YES, fill=X)
             entries.append((field, ent))
-        return entries
+        self.entries = entries
+        return self.entries
+    def reset_entries(self, frame):
+        for e in self.entries:
+            e[1].delete(0,'end')
     
     def callback(self, event):
         webbrowser.open_new(r"http://www.alarm.com/privacy_policy.aspx")
@@ -134,9 +163,9 @@ class SampleApp(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
     
-    def make_text(self, frame, text, font = ('Arial',14,'bold')):
-        lab = Label(frame, fg='black', bg=self.bg_color, wraplength = self.text_wrap_l, justify=LEFT, font=font, text=text)
-        lab.pack(side=TOP, padx=self.padx, fill=X, pady=10)
+    def make_text(self, frame, text, font = ('Arial',20, 'bold')):
+        lab = tk.Label(frame, fg='black', bg=self.bg_color, wraplength = self.text_wrap_l, font=font, text=text)
+        lab.pack(side=TOP, padx=self.text_padx, fill=X, pady =self.pady)
     
     def display_empty_mesg (self, field):
         messagebox.showerror(field, field+' field cannot be empty!')
@@ -150,7 +179,7 @@ class SampleApp(tk.Tk):
     def update_textdb(self, text_datafile):
         self.temp_ar = loadtxt(text_datafile, dtype='S50', delimiter=',')
         if not self.temp_ar.size:
-            self.temp_ar = np.empty([1, 5], dtype='S50')
+            self.temp_ar = np.empty([1, len(self.temp_ar[0])], dtype='S50')
         self.temp_ar = self.bsd(self.temp_ar)
         temp_keys = self.temp_ar[:,0]
         temp_values = self.temp_ar[:,1:]
@@ -166,6 +195,12 @@ class SampleApp(tk.Tk):
         output_video_file = os.path.join(output_dir, '_'+num+'.avi')
         camera = webcam()
         camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
+        confirm = messagebox.askquestion('Verify','Want to see your video clip before submitting?')
+        if confirm=='yes':
+            camera.disp_video(output_video_file)
+            redo = messagebox.askquestion('Re-record','Want to record your video clip again before submitting?')
+            if redo=='yes':
+                camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
         messagebox.showinfo('video upload', 'Successful...!')    
             
 class StartPage(tk.Frame):
@@ -174,62 +209,18 @@ class StartPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         
-        self.controller.make_text(self, text="Alarm.com Employee Facial Recognition Research and Development Data Collection Program")
+        self.controller.make_text(self, text="Alarm.com Employee Facial Recognition Research and Development Data Collection Program", font = controller.font_for_titles)
 
-        button1 = tk.Button(self, bg=controller.bg_color, text="Sign In",
-                            command=lambda: controller.show_frame("PageOne"))
-        button2 = tk.Button(self, bg=controller.bg_color, text="Sign Up",
+        #button1 = tk.Button(self, bg=controller.bg_color, text="Sign In", font=controller.font_for_buttons,command=lambda: controller.show_frame("PageOne"))
+        button2 = tk.Button(self, bg=controller.bg_color, text="Sign Up", font=controller.font_for_buttons,
                             command=lambda: controller.show_frame("PageTwo"))
-        button1.pack()
-        button2.pack()
+        #button1.pack(padx=controller.button_padx, pady = controller.pady, fill=X)
+        button2.pack(padx=controller.button_padx, pady = controller.pady, fill=X)
         
         self.grand_parent_name = parent.winfo_parent()
-        b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', command=parent._nametowidget(self.grand_parent_name).destroy)
+        b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', font=controller.font_for_buttons, command=parent._nametowidget(self.grand_parent_name).destroy)
 
-        b2.pack(padx=5, pady=5)
-
-
-class PageOne(tk.Frame):
-    '''Creates sign in page'''
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        label = tk.Label(self, text="Sign In", bg=controller.bg_color, font=controller.title_font)
-        label.pack(side="top", fill="x", pady=10)
-        fields = ['Username','Passwd (2 eng words with a single space)']
-        ents = controller.makeform(self, fields)
-        b1 = Button(self, bg = controller.bg_color, text='Upload another video',
-              command=(lambda e=ents: self.validate_and_submit(e)))
-        b1.pack(side = TOP, padx=5, pady=5)
-        button = tk.Button(self, bg=controller.bg_color, text="Go to the home page",
-                           command=lambda: controller.show_frame("StartPage"))
-        button.pack()
-        self.grand_parent_name = parent.winfo_parent()
-        b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', command=parent._nametowidget(self.grand_parent_name).destroy)
-        b2.pack(padx=5, pady=5)
-    def validate_and_submit(self, entries):
-        flag = 1
-        text_entry_list = []
-        for entry in entries:
-            field = entry[0]
-            text  = entry[1].get()
-            text_entry_list.append(text)
-            if (text=="" or text==None):
-                print('%s: should not be empty!' % (field))
-                flag = 0
-                self.controller.display_empty_mesg(field)
-            elif(field == 'Username'):
-                if (text not in self.controller.text_db):
-                    flag = 0
-                    messagebox.showerror(field+' error!' , 'Username: '+ text +' is not registered! Please sign up..!')
-                    self.controller.show_frame("PageTwo")
-            elif(field == 'Passwd (2 eng words with a single space)'):
-                if (flag and not (text == self.controller.text_db[text_entry_list[0]][0])):
-                    flag = 0
-                    messagebox.showerror(' Password incorrect!' , 'Please try again!')
-        if flag:
-            self.controller.upload_video(text_entry_list[0])
-
+        b2.pack(padx=controller.button_padx, pady=controller.pady)
 
 class PageTwo(tk.Frame):
     '''Creates sign up page'''
@@ -239,43 +230,47 @@ class PageTwo(tk.Frame):
         
         
         
-        label = tk.Label(self, text="Sign up", bg=controller.bg_color,  font=controller.title_font)
-        label.pack(side="top", fill="x", pady=10)
+        label = tk.Label(self, text="Sign up", bg=controller.bg_color,  font=controller.font_for_titles)
+        label.pack(side="top", fill="x", pady=controller.pady)
         
         
-        self.controller.make_text(self, "Alarm.com Employee Facial Recognition Consent for Research and Development (dated as of June 9, 2017)", font=('Arial', 14, 'bold'))
-        self.controller.make_text(self, "By clicking “I Agree” or signing below, I consent to Alarm.com’s collection, transmission, maintenance, processing, and use of my video images and biometric data (collectively, “Facial Recognition Data”) in order to enable the research and development of Alarm.com’s facial recognition services, as described in this notice and in accordance with Alarm.com’s Privacy Policy. I further acknowledge and agree that Alarm.com may share my Facial Recognition Data with its affiliates for use in accordance with this notice and that Alarm.com and such affiliates may retain my Facial Recognition Data. I acknowledge and agree that I am 13 years old or older, currently an employee of Alarm.com and not a resident of the State of Illinois.  Please read our Privacy Policy and the acknowledgement below, and click “I Agree”, or sign below, to consent.",font=('Arial', 12))
-        self.controller.make_text(self, "I have reviewed this notice, the Alarm.com Privacy Policy and hereby consent to the collection, use and disclosure of my Facial Recognition Data in accordance with the Privacy Policy and this notice.", font = ('Arial',12,'italic'))
-        fields = ['Username','Passwd (2 eng words with a single space)', 'Last Name', 'First Name', 'Email id']
-        ents = controller.makeform(self, fields)
+        self.controller.make_text(frame=self, text = "Alarm.com Employee Facial Recognition Consent for Research and Development (dated as of June 9, 2017)", font=controller.font_for_titles)
+        self.controller.make_text(frame=self, text = "By clicking “I Agree” or signing below, I consent to Alarm.com’s collection, transmission, maintenance, processing, and use of my video images and biometric data (collectively, “Facial Recognition Data”) in order to enable the research and development of Alarm.com’s facial recognition services, as described in this notice and in accordance with Alarm.com’s Privacy Policy. I further acknowledge and agree that Alarm.com may share my Facial Recognition Data with its affiliates for use in accordance with this notice and that Alarm.com and such affiliates may retain my Facial Recognition Data. I acknowledge and agree that I am 13 years old or older, currently an employee of Alarm.com and not a resident of the State of Illinois.  Please read our Privacy Policy and the acknowledgement below, and click “I Agree”, or sign below, to consent.",font=controller.font_for_text)
+        self.controller.make_text(frame=self, text = "I have reviewed this notice, the Alarm.com Privacy Policy and hereby consent to the collection, use and disclosure of my Facial Recognition Data in accordance with the Privacy Policy and this notice.", font = controller.font_for_text)
+        
         
         row = Frame(self, bg=controller.bg_color)
         agree = IntVar()
-        c = Checkbutton(row, bg= controller.bg_color, text="I agree and give consent",variable=agree)
-        row.pack(side=TOP, padx = (5,5), pady=(5,5))
+        c = Checkbutton(row, bg= controller.bg_color, text="I agree and give consent", font=controller.font_for_text,variable=agree)
+        row.pack(side=TOP, padx = controller.text_padx, pady=controller.pady)
         c.pack(side=LEFT)
+        
+        
+        link = Label(row, text="Alarm.com Privacy Policy", fg="blue", bg=controller.bg_color, font = controller.font_for_text, cursor="hand2")
+        link.pack(side = LEFT, padx = (int(controller.scr_w*0.0521),controller.text_padx))
+        link.bind("<Button-1>", controller.callback)
+        
+        
+        fields = ['Username', 'Last Name', 'First Name', 'Email id']
+        ents = controller.makeform(self, fields)
         
         self.bind('<Return>', (lambda event, e=ents: self.validate_and_submit(e, agree)))
         
-        link = Label(row, text="Alarm.com Privacy Policy", fg="blue", bg=controller.bg_color, cursor="hand2")
-        link.pack(side = LEFT, padx = (100,10))
-        link.bind("<Button-1>", controller.callback)
-        
-        b1 = Button(self, bg = controller.bg_color, text='Submit',
+        b1 = Button(self, bg = controller.bg_color, text='Submit', font=controller.font_for_buttons,
               command=(lambda e=ents: self.validate_and_submit(e, agree)))
-        b1.pack(side = TOP, padx=5, pady=5)
+        b1.pack(side = TOP, padx=controller.button_padx, pady=controller.pady)
         self.grand_parent_name = parent.winfo_parent()
-        b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', command=parent._nametowidget(self.grand_parent_name).destroy)
-        b2.pack(padx=5, pady=5)
+        b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', font=controller.font_for_buttons, command=parent._nametowidget(self.grand_parent_name).destroy)
+        b2.pack(padx=controller.button_padx, pady=controller.pady)
         
         
-        button = tk.Button(self, bg=controller.bg_color, text="Go to the home page",
+        button = tk.Button(self, bg=controller.bg_color, text="Go to the home page", font=controller.font_for_buttons,
                            command=lambda: controller.show_frame("StartPage"))
-        button.pack()
+        button.pack(padx=controller.button_padx, pady=controller.pady)
     
     def submit_new_entry_to_textdb(self, entries):
         self.controller.temp_ar = np.vstack((self.controller.temp_ar,np.asarray(entries, dtype='S50')))
-        np.savetxt(self.controller.text_datafile, self.controller.temp_ar, fmt=('%s','%s','%s','%s','%s'), delimiter=',')
+        np.savetxt(self.controller.text_datafile, self.controller.temp_ar, fmt=('%s','%s','%s','%s'), delimiter=',')
         self.controller.update_textdb(self.controller.text_datafile)
     
     def validate_and_submit(self, entries, agree):
@@ -297,8 +292,17 @@ class PageTwo(tk.Frame):
                 print('%s: is not a valid email! Please enter a valid email id!' % (text))
                 flag=0
                 self.controller.display_invalid_msg(field, text)
+            elif (field == 'Email id'):
+                domain = text.split('@')[1]
+                valid_domains = ['alarm.com','Alarm.com','objectvideo.com','pointcentral.com','energyhub.net','securitytrax.com','building36.com']
+                if domain not in valid_domains:
+                    mesg = str('%s: is not a valid ADC domain! Please enter a valid employee email id!' % (domain))
+                    print(mesg)
+                    flag=0
+                    #self.controller.display_invalid_msg(field, text)
+                    messagebox.showerror('Invalid ADC domain!',mesg)
             #^[a-zA-Z]+\s[a-zA-Z]+$
-            elif (field == 'Passwd (2 eng words with a single space)' and not re.match(r"^[a-zA-Z]+\s[a-zA-Z]+$", text)):
+            elif (field == 'Password' and not re.match(r"^[a-zA-Z]+\s[a-zA-Z]+$", text)):
                 print('The Passphrase entered is not a valid one! Please enter two english words separated with only one space')
                 flag=0
                 self.controller.display_invalid_msg(field, 'entered passphrase')
@@ -306,6 +310,7 @@ class PageTwo(tk.Frame):
             self.submit_new_entry_to_textdb(text_entry_list)
             messagebox.showinfo('Registration status', 'Successful...!\nPlease read the following instructions carefully and follow them!\n1. Now your face video will be recorded for 10 seconds after 5 seconds of preparation time.\n2. Please adjust your face relative to the position of the webcamera so that your face is in the center.\n')
             self.controller.upload_video(text_entry_list[0])
+            self.controller.reset_entries(self)
             self.controller.show_frame("StartPage")
             print("Agreed and submitted")
             #self.contorller.root.destroy()
@@ -316,7 +321,5 @@ class PageTwo(tk.Frame):
             print('flag is reset for some reason!')
 
 if __name__ == "__main__":
-    #text_db = os.path.join('text_db', 'text_data.csv')
-    text_db = 'text_data.csv'
-    app = SampleApp(text_db)
+    app = SampleApp('_1.csv')
     app.mainloop()
