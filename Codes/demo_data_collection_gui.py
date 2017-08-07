@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from __future__ import unicode_literals
+#from __future__ import unicode_literals
 
-from builtins import open
-from builtins import str
+#from builtins import open
+#from builtins import str
 # etc., as needed
 
-from future import standard_library
-standard_library.install_aliases()
+#from future import standard_library
+#standard_library.install_aliases()
 
 import os
 from shutil import copyfile
@@ -39,8 +38,10 @@ class webcam:
         #timeout = time.time() + 11   # 10 seconds from now
         cap = cv2.VideoCapture(0)
         # Define the codec and create VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-        out = cv2.VideoWriter(output_file,fourcc, fps, resolution)
+        #fourcc =cv2.VideoWriter_fourcc(*'DIVX')
+        #fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+
+	out = cv2.VideoWriter(output_file,cv2.VideoWriter_fourcc(*'XVID'), fps, resolution)
         init_time = time.time()
         if (prepare):
             final_timeout = init_time+length+prep_time+1
@@ -250,7 +251,7 @@ class PageTwo(tk.Frame):
         
         
         self.controller.make_text(frame=self, text = "Alarm.com Employee Facial Recognition Consent for Research and Development (dated as of June 9, 2017)", font=controller.font_for_titles)
-        self.controller.make_text(frame=self, text = "By clicking “I Agree” or signing below, I consent to Alarm.com’s collection, transmission, maintenance, processing, and use of my video images and biometric data (collectively, “Facial Recognition Data”) in order to enable the research and development of Alarm.com’s facial recognition services, as described in this notice and in accordance with Alarm.com’s Privacy Policy. I further acknowledge and agree that Alarm.com may share my Facial Recognition Data with its affiliates for use in accordance with this notice and that Alarm.com and such affiliates may retain my Facial Recognition Data. I acknowledge and agree that I am 13 years old or older, currently an employee of Alarm.com and not a resident of the State of Illinois.  Please read our Privacy Policy and the acknowledgement below, and click “I Agree”, or sign below, to consent.",font=controller.font_for_text)
+        self.controller.make_text(frame=self, text = "By clicking 'I Agree' or signing below, I consent to Alarm.com's collection, transmission, maintenance, processing, and use of my video images and biometric data (collectively, 'Facial Recognition Data') in order to enable the research and development of Alarm.com's facial recognition services, as described in this notice and in accordance with Alarm.com's Privacy Policy. I further acknowledge and agree that Alarm.com may share my Facial Recognition Data with its affiliates for use in accordance with this notice and that Alarm.com and such affiliates may retain my Facial Recognition Data. I acknowledge and agree that I am 13 years old or older, currently an employee of Alarm.com and not a resident of the State of Illinois.  Please read our Privacy Policy and the acknowledgement below, and click 'I Agree', or sign below, to consent.",font=controller.font_for_text)
         self.controller.make_text(frame=self, text = "I have reviewed this notice, the Alarm.com Privacy Policy and hereby consent to the collection, use and disclosure of my Facial Recognition Data in accordance with the Privacy Policy and this notice.", font = controller.font_for_text)
         
         
