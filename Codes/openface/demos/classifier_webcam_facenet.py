@@ -177,10 +177,10 @@ if __name__ == '__main__':
     with tf.Graph().as_default():
         with tf.Session() as sess:
 
-           print('Model directory: %s' % model_dir)
-           meta_file, ckpt_file = facenet.get_model_filenames(os.path.expanduser(model_dir))
-           print('Metagraph file: %s' % meta_file)
-           print('Checkpoint file: %s' % ckpt_file)
+           #print('Model directory: %s' % model_dir)
+           #meta_file, ckpt_file = facenet.get_model_filenames(os.path.expanduser(model_dir))
+           #print('Metagraph file: %s' % meta_file)
+           #print('Checkpoint file: %s' % ckpt_file)
            facenet.load_model(model_dir)
 
            threshold = args.threshold
@@ -190,6 +190,7 @@ if __name__ == '__main__':
            embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
 
 	   cv2.namedWindow('Panel Face Recognition', cv2.WINDOW_NORMAL)
+           cv2.setWindowProperty('Panel Face Recognition', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
            repsList = []
            labsList = []
@@ -242,4 +243,4 @@ if __name__ == '__main__':
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()
-
+    os.system("python /home/ovuser/FaceRecognition/Codes/openface/demos/gui.py")

@@ -353,3 +353,8 @@ class PageTwo(tk.Frame):
 			messagebox.showerror('Agreement required', 'You have to agree to the terms to proceed!\n Please agree after reviewing the terms...')
 		else:
 			pass
+
+if __name__ == "__main__":
+	app = SampleApp('/home/ovuser/FaceRecognition/Codes/openface/demos/db_users.pkl')
+	app.mainloop()
+os.system("/home/ovuser/FaceRecognition/Codes/openface/demos/classifier_webcam_facenet.py /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Groups/cv-group-114528472702/OVI-Train/TrainSet/cv-group-114528472702-run-05/Feature/classifier.pkl --model_dir models/20170512-110547")
