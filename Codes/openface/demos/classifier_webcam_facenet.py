@@ -26,7 +26,7 @@
 
 
 import time
-from gui import SampleApp
+
 start = time.time()
 
 import argparse
@@ -62,7 +62,7 @@ openfaceModelDir = os.path.join(modelDir, 'openface')
 def InitializeMTCNN ():
     sleep(random.random())
     with tf.Graph().as_default():
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
         sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
         with sess.as_default():
             pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
@@ -78,14 +78,14 @@ def getRep_facenet(bgrImg, sess, embeddings, images_placeholder, phase_train_pla
     if multiple:
         bbs = align_dlib.getAllFaceBoundingBoxes(rgbImg)
     else:
-        rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
+	rgbImg = cv2.cvtColor(bgrImg, cv2.COLOR_BGR2RGB)
         bounding_boxes, _ = align.detect_face.detect_face(rgbImg, minsize, pnet, rnet, onet, mtcnn_threshold, factor)
         nrof_faces = bounding_boxes.shape[0]
         if nrof_faces == 0:
             return []
 
         for i in range(nrof_faces):
-            det = bounding_boxes[i, 0:4]
+	    det = bounding_boxes[i, 0:4]
             img_size = np.asarray(rgbImg.shape)[0:2]
             margin = 32
             bb = np.zeros(4, dtype=np.int32)
@@ -94,61 +94,53 @@ def getRep_facenet(bgrImg, sess, embeddings, images_placeholder, phase_train_pla
             bb[2] = np.minimum(det[2] + margin / 2, img_size[1])
             bb[3] = np.minimum(det[3] + margin / 2, img_size[0])
             bb2 = dlib.rectangle(left=int(bb[0]), top=int(bb[1]), right=int(bb[2]), bottom=int(bb[3]))
-            if (bb2.right() - bb2.left() > mtcnn_rectangle_size_threshold):
-                cropped = rgbImg[bb[1]:bb[3],bb[0]:bb[2],:]
-                alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
-                #if (i == 0):
-                #   cv2.imshow("Face", alignedFace)
-                #   cv2.waitKey(2)
-                alignedFace = facenet.prewhiten(alignedFace)
+	    if (bb2.right() - bb2.left() > mtcnn_rectangle_size_threshold):
+            	cropped = rgbImg[bb[1]:bb[3],bb[0]:bb[2],:]
+            	alignedFace = misc.imresize(cropped, (args.imgDim, args.imgDim), interp='bilinear')
+	    	#if (i == 0):
+	    	#	cv2.imshow("Face", alignedFace)
+	    	#	cv2.waitKey(2)
+            	alignedFace = facenet.prewhiten(alignedFace)
 
-                # Run forward pass to calculate embeddings
-                feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
-                emb_list = sess.run(embeddings, feed_dict=feed_dict)
-                rep = emb_list[0]
-            else:
-                rep = None
-                reps.append([rep, bb2])
+            	# Run forward pass to calculate embeddings
+            	feed_dict = {images_placeholder: [alignedFace], phase_train_placeholder:False }
+            	emb_list = sess.run(embeddings, feed_dict=feed_dict)
+            	rep = emb_list[0]
+	    else:
+		rep = None
+            #reps.append((bb2.center().x, rep))
+	    reps.append([rep, bb2])
+
     return reps
 
-
 def infer(img, args, sess, embeddings, image_placeholder, phase_train_placeholder, pnet, rnet, onet, le, clf, mtcnn_rectangle_size_threshold):
+
     reps = getRep_facenet(img, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, mtcnn_rectangle_size_threshold)
+    #reps = getRep_mtcnn_align(img, sess, embeddings, images_placeholder, phase_train_placeholder, detector)
     persons = []
     confidences = []
     boxes = []
     for rep in reps:
-        box = rep[1]
-        rep = rep[0]
-        if (rep is None):
-            persons.append(None)
-            confidences.append(0.0)
-            boxes.append(box)
-        elif (rep.all()==None):
-            persons.append(None)
-            confidences.append(0.0)
-            boxes.append(box) 
-        else:   
-            rep = rep.reshape(1, -1)
-            start = time.time()
-            predictions = clf.predict_proba(rep).ravel()
-            # print predictions
-            maxI = np.argmax(predictions)
-            persons.append(le.inverse_transform(maxI))
-            confidences.append(predictions[maxI])
-            boxes.append(box)
+	box = rep[1]
+	rep = rep[0]
+	if (rep is None):
+        	persons.append(None)
+        	confidences.append(0.0)
+		boxes.append(box)
+	else:	
+        	rep = rep.reshape(1, -1)
+        	start = time.time()
+        	predictions = clf.predict_proba(rep).ravel()
+        	# print predictions
+        	maxI = np.argmax(predictions)
+        	persons.append(le.inverse_transform(maxI))
+        	confidences.append(predictions[maxI])
+		boxes.append(box)
     return (persons, confidences, boxes)
 
 
-def draw_text(frame, text, x, y, color=(200,140,255), thickness=3, size=2):
-    if x is not None and y is not None:
-        cv2.putText(frame, text, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, size, color, thickness)
-
-def call_gui():
-    app = SampleApp('db_users.pkl')
-    app.mainloop()
-
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--dlibFacePredictor', type=str, help="Path to dlib's face predictor.", default=os.path.join( dlibModelDir, "shape_predictor_68_face_landmarks.dat"))
     parser.add_argument('--imgDim', type=int, help="Default image dimension.", default=160)
@@ -161,77 +153,92 @@ if __name__ == '__main__':
     parser.add_argument('--model_dir', type=str, nargs='+', help="Facenet network model.")
     parser.add_argument('--deblurr', type=int, help='DeBlurring face', default=0)
     parser.add_argument('classifierModel', type=str, help='The Python pickle representing the classifier. This is NOT the Torch network model, which can be set with --networkModel.')
+
+
     args = parser.parse_args()
+
     model_dir = args.model_dir[0]
+
+
     align_dlib = openface.AlignDlib(args.dlibFacePredictor)
+
+    #detector = MtcnnDetector(model_folder='model', ctx=mx.cpu(0), num_worker = 4 , accurate_landmark = False)
+
+    # Capture device. Usually 0 will be webcam and 1 will be usb cam.
     video_capture = cv2.VideoCapture(args.captureDevice)
     video_capture.set(3, args.width)
     video_capture.set(4, args.height)
+
     pnet, rnet, onet = InitializeMTCNN()
-    
+
     with open(args.classifierModel, 'r') as f:
         (le, clf) = pickle.load(f)  # le - label and clf - classifer
+
     with tf.Graph().as_default():
         with tf.Session() as sess:
-            facenet.load_model(model_dir)
-            threshold = args.threshold
 
-            images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
-            phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
-            embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
+           print('Model directory: %s' % model_dir)
+           meta_file, ckpt_file = facenet.get_model_filenames(os.path.expanduser(model_dir))
+           print('Metagraph file: %s' % meta_file)
+           print('Checkpoint file: %s' % ckpt_file)
+           facenet.load_model(model_dir)
 
-            cv2.namedWindow('Panel Face Recognition', cv2.WINDOW_NORMAL)
-            #cv2.setWindowProperty('Panel Face Recognition', cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+           threshold = args.threshold
 
-            repsList = []
-            labsList = []
-            repsZero = np.zeros([128])
-            confidenceList = []
-            while True:
-                ret, frame = video_capture.read()
-                persons, confidences, boxes = infer(frame, args, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, le, clf, mtcnn_rectangle_size_threshold)
-                print "P: " + str(persons) + " C: " + str(confidences)
-                try:
-                    # append with two floating point precision
-                    confidenceList.append('%.2f' % confidences[0])
-                except:
-                    # If there is no face detected, confidences matrix will be empty.
-                    # We can simply ignore it.
-                    pass
+           images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
+           phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
+           embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
 
-                for i, c in enumerate(confidences):
-                    if c <= args.threshold:  # 0.5 is kept as threshold for known face.
-                        persons[i] = "_unknown"
+	   cv2.namedWindow('Panel Face Recognition', cv2.WINDOW_NORMAL)
 
-                width = frame.shape[1] 
-                frame = cv2.flip(frame, 1)
+           repsList = []
+           labsList = []
+           repsZero = np.zeros([128])
+    	   confidenceList = []
+    	   while True:
+        	ret, frame = video_capture.read()
+        	persons, confidences, boxes = infer(frame, args, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, le, clf, mtcnn_rectangle_size_threshold)
+        	print "P: " + str(persons) + " C: " + str(confidences)
+        	try:
+            		# append with two floating point precision
+            		confidenceList.append('%.2f' % confidences[0])
+        	except:
+            		# If there is no face detected, confidences matrix will be empty.
+            		# We can simply ignore it.
+            		pass
 
-                for person, confidence, box in zip(persons, confidences, boxes):
-                    bl = (width - box.right(), box.bottom())
-                    tr = (width - box.left(), box.top())
+        	for i, c in enumerate(confidences):
+            		if c <= args.threshold:  # 0.5 is kept as threshold for known face.
+                		persons[i] = "_unknown"
 
-                    if (box.right() - box.left() <= mtcnn_rectangle_size_threshold):
-                        cv2.rectangle(frame, bl, tr, color=(0, 255, 0), thickness=1, lineType=100)
-                        continue
-                    if confidence <= args.threshold:
-                        name = "Stranger"
-                    else:
-                        name = person
-                                
-                    if (box.right() - box.left() > mtcnn_rectangle_size_threshold):
-                        if (name == "Stranger"):
-                            cv2.rectangle(frame, bl, tr, color=(0, 255, 255), thickness=1, lineType=100)
-                            cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(0, 255, 255), thickness=2, lineType=100)
-                        else:
-                            cv2.rectangle(frame, bl, tr, color=(255, 0, 255), thickness=1, lineType=100)
-                            cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(255, 0, 255), thickness=2, lineType=100)
-                draw_text(frame, 'Please press s to register and contribute..!',25,75, size=1)
-                cv2.imshow('Panel Face Recognition', frame)
-                # quit the program on the press of key 'q'
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                if cv2.waitKey(1) & 0xFF == ord('s'):
-                    call_gui()
+		width = frame.shape[1] 
+		frame = cv2.flip(frame, 1)
+
+		for person, confidence, box in zip(persons, confidences, boxes):
+			bl = (width - box.right(), box.bottom())
+       			tr = (width - box.left(), box.top())
+
+			if (box.right() - box.left() <= mtcnn_rectangle_size_threshold):
+	        		cv2.rectangle(frame, bl, tr, color=(0, 255, 0), thickness=1, lineType=100)
+				continue
+
+		    	if confidence <= args.threshold:
+       		        	name = "Stranger"
+       		    	else:
+       		        	name = person
+
+			if (box.right() - box.left() > mtcnn_rectangle_size_threshold):
+				if (name == "Stranger"):
+	        			cv2.rectangle(frame, bl, tr, color=(0, 255, 255), thickness=1, lineType=100)
+    					cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(0, 255, 255), thickness=2, lineType=100)
+				else:
+	        			cv2.rectangle(frame, bl, tr, color=(255, 0, 255), thickness=1, lineType=100)
+    					cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(255, 0, 255), thickness=2, lineType=100)
+
+        	cv2.imshow('Panel Face Recognition', frame)
+        	# quit the program on the press of key 'q'
+        	if cv2.waitKey(1) & 0xFF == ord('q'):
+            		break
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()
