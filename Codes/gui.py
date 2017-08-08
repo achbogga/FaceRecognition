@@ -14,6 +14,7 @@ import re
 from numpy import loadtxt
 from tkinter import Widget
 import pickle
+import pyscreenshot as ImageGrab
 
 import numpy as np
 import cv2
@@ -306,6 +307,14 @@ class PageTwo(tk.Frame):
 		self.controller.text_db.append(entries[0])
 		with open(self.controller.text_datafile, 'wb') as fp:
 			pickle.dump(self.controller.text_db, fp)
+		output_dir = os.path.join(os.getcwd(),'agreements_db')
+		output_file = os.path.join(output_dir,entries[0]+'_agreement_screenshot.png')
+		if not os.path.isdir(output_dir):
+			os.makedirs(output_dir)
+		# grab fullscreen
+		im = ImageGrab.grab()
+		# save image file
+		im.save(output_file)
 	
 	def validate_and_submit(self, entries, agree):
 		flag = 1
