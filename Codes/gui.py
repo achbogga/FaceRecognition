@@ -112,7 +112,7 @@ class SampleApp(tk.Tk):
 		container.grid_columnconfigure(0, weight=1)
 
 		self.frames = {}
-		for F in (StartPage, PageTwo):
+		for F in (StartPage, PageOne, PageTwo):
 			page_name = F.__name__
 			frame = F(parent=container, controller=self)
 			self.frames[page_name] = frame
@@ -217,56 +217,92 @@ class StartPage(tk.Frame):
 
 		b2.pack(padx=controller.button_padx, pady=controller.pady)
 
+class PageOne(tk.Frame):
+	'''Creates sign in page'''
+	def __init__(self, parent, controller):
+		tk.Frame.__init__(self, parent)
+		self.controller = controller
+		
+		label = tk.Label(self, text="Sign in", bg=controller.bg_color,  font=controller.font_for_titles)
+		label.pack(side="top", fill="x", pady=controller.pady)
+		row = Frame(self, bg=controller.bg_color)
+		fields = ['ADC email']
+		ents = controller.makeform(self, fields)
+		
+		b1 = Button(self, bg = controller.bg_color, text='Upload another video', font=controller.font_for_buttons, command=(lambda e=ents: self.validate_and_submit(e)))
+		b1.pack(side = TOP, padx=controller.button_padx, pady=controller.pady)
+		self.grand_parent_name = parent.winfo_parent()
+		b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', font=controller.font_for_buttons, command=parent._nametowidget(self.grand_parent_name).destroy)
+		b2.pack(padx=controller.button_padx, pady=controller.pady)
+		button = tk.Button(self, bg=controller.bg_color, text="Go to the home page", font=controller.font_for_buttons, command=lambda: controller.show_frame("StartPage"))
+		button.pack(padx=controller.button_padx, pady=controller.pady)
+		
+	def validate_and_submit(self, entries):
+		flag = 1
+		text_entry_list = []
+		for entry in entries:
+			field = entry[0]
+			text  = entry[1].get()
+			text_entry_list.append(text)
+			if (text=="" or text==None):
+				print('%s: should not be empty!' % (field))
+				flag = 0
+				self.controller.display_empty_mesg(field)
+			if (field == 'ADC email' and not re.match(r"[^@]+@[^@]+\.[^@]+", text)) and flag:
+				print('%s: is not a valid email! Please enter a valid email id!' % (text))
+				flag=0
+				self.controller.display_invalid_msg(field, text)
+			if (field == 'ADC email') and flag:
+				domain = text.split('@')[1]
+				valid_domains = ['alarm.com','Alarm.com','objectvideo.com','pointcentral.com','energyhub.net','securitytrax.com','building36.com']
+				if domain not in valid_domains:
+					mesg = str('%s: is not a valid ADC domain! Please enter a valid ADC employee email id!' % (domain))
+					flag=0
+					messagebox.showerror('Invalid ADC domain!',mesg)
+			if(field == 'ADC email') and flag:
+				if (text not in self.controller.text_db):
+					flag = 0
+					messagebox.showerror(field , 'User: '+ text +' does not exist in our database! Please use sign up option if you hadn\'t  already signed up!')
+					self.controller.show_frame("PageTwo")
+		if flag:
+			messagebox.showinfo('Signed In', 'Please read the following instructions carefully and follow them!\n1. Now your face video will be recorded for 10 seconds after 5 seconds of preparation time.\n2. Please adjust your face relative to the position of the webcamera so that your face is in the center.\n')
+			self.controller.upload_video(text_entry_list[0])
+			self.controller.reset_entries(self)
+			self.controller.show_frame("StartPage")
+		else:
+			pass
+
 class PageTwo(tk.Frame):
 	'''Creates sign up page'''
 	def __init__(self, parent, controller):
 		tk.Frame.__init__(self, parent)
 		self.controller = controller
-		
-		
-		
 		label = tk.Label(self, text="Sign up", bg=controller.bg_color,  font=controller.font_for_titles)
 		label.pack(side="top", fill="x", pady=controller.pady)
-		
-		
 		self.controller.make_text(frame=self, text = "Alarm.com Employee Facial Recognition Consent for Research and Development (dated as of June 9, 2017)", font=controller.font_for_titles)
 		self.controller.make_text(frame=self, text = "By clicking 'I Agree' or signing below, I consent to Alarm.com's collection, transmission, maintenance, processing, and use of my video images and biometric data (collectively, 'Facial Recognition Data') in order to enable the research and development of Alarm.com's facial recognition services, as described in this notice and in accordance with Alarm.com's Privacy Policy. I further acknowledge and agree that Alarm.com may share my Facial Recognition Data with its affiliates for use in accordance with this notice and that Alarm.com and such affiliates may retain my Facial Recognition Data. I acknowledge and agree that I am 13 years old or older, currently an employee of Alarm.com and not a resident of the State of Illinois.  Please read our Privacy Policy and the acknowledgement below, and click 'I Agree', or sign below, to consent.",font=controller.font_for_text)
 		self.controller.make_text(frame=self, text = "I have reviewed this notice, the Alarm.com Privacy Policy and hereby consent to the collection, use and disclosure of my Facial Recognition Data in accordance with the Privacy Policy and this notice.", font = controller.font_for_text)
-		
-		
 		row = Frame(self, bg=controller.bg_color)
 		agree = IntVar()
 		c = Checkbutton(row, bg= controller.bg_color, text="I agree and give consent", font=controller.font_for_text,variable=agree)
 		row.pack(side=TOP, padx = controller.text_padx, pady=controller.pady)
 		c.pack(side=LEFT)
-		
-		
 		link = Label(row, text="Alarm.com Privacy Policy", fg="blue", bg=controller.bg_color, font = controller.font_for_text, cursor="hand2")
 		link.pack(side = LEFT, padx = (int(controller.scr_w*0.0521),controller.text_padx))
 		link.bind("<Button-1>", controller.callback)
 		
-		
 		fields = ['ADC email']
 		ents = controller.makeform(self, fields)
 		
-		self.bind('<Return>', (lambda event, e=ents: self.validate_and_submit(e, agree)))
-		
-		b1 = Button(self, bg = controller.bg_color, text='Submit', font=controller.font_for_buttons,
-			  command=(lambda e=ents: self.validate_and_submit(e, agree)))
+		b1 = Button(self, bg = controller.bg_color, text='Submit', font=controller.font_for_buttons, command=(lambda e=ents: self.validate_and_submit(e, agree)))
 		b1.pack(side = TOP, padx=controller.button_padx, pady=controller.pady)
 		self.grand_parent_name = parent.winfo_parent()
 		b2 = Button(self,bg = controller.bg_color, text='Quit', fg='red', font=controller.font_for_buttons, command=parent._nametowidget(self.grand_parent_name).destroy)
 		b2.pack(padx=controller.button_padx, pady=controller.pady)
-		
-		
-		button = tk.Button(self, bg=controller.bg_color, text="Go to the home page", font=controller.font_for_buttons,
-						   command=lambda: controller.show_frame("StartPage"))
+		button = tk.Button(self, bg=controller.bg_color, text="Go to the home page", font=controller.font_for_buttons, command=lambda: controller.show_frame("StartPage"))
 		button.pack(padx=controller.button_padx, pady=controller.pady)
 	
 	def submit_new_entry_to_textdb(self, entries):
-		#self.controller.temp_ar = np.vstack((self.controller.temp_ar,np.asarray(entries, dtype='S50')))
-		#np.savetxt(self.controller.text_datafile, self.controller.temp_ar, fmt=('%s'), delimiter=',')
-		#self.controller.update_textdb(self.controller.text_datafile)
 		self.controller.text_db.append(entries[0])
 		with open(self.controller.text_datafile, 'wb') as fp:
 			pickle.dump(self.controller.text_db, fp)
@@ -282,41 +318,31 @@ class PageTwo(tk.Frame):
 				print('%s: should not be empty!' % (field))
 				flag = 0
 				self.controller.display_empty_mesg(field)
-			if(field == 'ADC email'):
-				if (text in self.controller.text_db):
-					flag = 0
-					messagebox.showerror(field+' IndexError: pop from empty listerror!' , 'User: '+ text +' already exists! Please use sign in option if you have already signed up!')
-			if (field == 'ADC email' and not re.match(r"[^@]+@[^@]+\.[^@]+", text)):
+			if (field == 'ADC email' and not re.match(r"[^@]+@[^@]+\.[^@]+", text)) and flag:
 				print('%s: is not a valid email! Please enter a valid email id!' % (text))
 				flag=0
 				self.controller.display_invalid_msg(field, text)
-			if (field == 'ADC email'):
+			if (field == 'ADC email') and flag:
 				domain = text.split('@')[1]
 				valid_domains = ['alarm.com','Alarm.com','objectvideo.com','pointcentral.com','energyhub.net','securitytrax.com','building36.com']
 				if domain not in valid_domains:
 					mesg = str('%s: is not a valid ADC domain! Please enter a valid ADC employee email id!' % (domain))
-					#print(mesg)
 					flag=0
-					#self.controller.display_invalid_msg(field, text)
 					messagebox.showerror('Invalid ADC domain!',mesg)
-			#^[a-zA-Z]+\s[a-zA-Z]+$
-			#elif (field == 'Password' and not re.match(r"^[a-zA-Z]+\s[a-zA-Z]+$", text)):
-			#    print('The Passphrase entered is not a valid one! Please enter two english words separated with only one space')
-			#    flag=0
-			#    self.controller.display_invalid_msg(field, 'entered passphrase')
+			if(field == 'ADC email') and flag:
+				if (text in self.controller.text_db):
+					flag = 0
+					messagebox.showerror(field, 'User: '+ text +' already exists! Please use sign in option if you have already signed up!')
+					self.controller.show_frame("PageOne")
 		if flag and agree.get():
 			self.submit_new_entry_to_textdb(text_entry_list)
 			messagebox.showinfo('Registration status', 'Successful...!\nPlease read the following instructions carefully and follow them!\n1. Now your face video will be recorded for 10 seconds after 5 seconds of preparation time.\n2. Please adjust your face relative to the position of the webcamera so that your face is in the center.\n')
 			self.controller.upload_video(text_entry_list[0])
 			self.controller.reset_entries(self)
 			self.controller.show_frame("StartPage")
-			#print("Agreed and submitted")
-			#self.contorller.root.destroy()
 		elif (flag and not agree.get()):
 			messagebox.showerror('Agreement required', 'You have to agree to the terms to proceed!\n Please agree after reviewing the terms...')
-			#print("Not agreed and submitted!")
 		else:
-			#print('flag is reset for some reason!')
 			pass
 
 if __name__ == "__main__":
