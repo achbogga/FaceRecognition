@@ -62,7 +62,7 @@ openfaceModelDir = os.path.join(modelDir, 'openface')
 def InitializeMTCNN ():
     sleep(random.random())
     with tf.Graph().as_default():
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
         sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
         with sess.as_default():
             pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
@@ -161,10 +161,14 @@ def infer(img, args, sess, embeddings, image_placeholder, phase_train_placeholde
     for rep in reps:
 	box = rep[1]
 	rep = rep[0]
-	if (rep.all() == None):
+	if (rep is None):
         	persons.append(None)
         	confidences.append(0.0)
 		boxes.append(box)
+	elif (rep.all()==None):
+		persons.append(None)
+                confidences.append(0.0)
+                boxes.append(box) 
 	else:	
         	rep = rep.reshape(1, -1)
         	start = time.time()
@@ -183,8 +187,8 @@ if __name__ == '__main__':
     parser.add_argument('--dlibFacePredictor', type=str, help="Path to dlib's face predictor.", default=os.path.join( dlibModelDir, "shape_predictor_68_face_landmarks.dat"))
     parser.add_argument('--imgDim', type=int, help="Default image dimension.", default=160)
     parser.add_argument('--captureDevice', type=int, default=0, help='Capture device. 0 for latop webcam and 1 for usb webcam')
-    parser.add_argument('--width', type=int, default=640)
-    parser.add_argument('--height', type=int, default=480)
+    parser.add_argument('--width', type=int, default=1366)
+    parser.add_argument('--height', type=int, default=768)
     parser.add_argument('--threshold', type=float, default=0.3)
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--verbose', action='store_true')
@@ -229,6 +233,7 @@ if __name__ == '__main__':
            embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
 
 	   cv2.namedWindow('Panel Face Recognition', cv2.WINDOW_NORMAL)
+	   cv2.setWindowProperty('Panel Face Recognition',cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 
            repsList = []
            labsList = []

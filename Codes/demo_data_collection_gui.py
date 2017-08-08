@@ -2,14 +2,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-#from __future__ import unicode_literals
-
-#from builtins import open
-#from builtins import str
-# etc., as needed
-
-#from future import standard_library
-#standard_library.install_aliases()
 
 import os
 from shutil import copyfile
@@ -26,8 +18,6 @@ from tkinter import Widget
 import numpy as np
 import cv2
 import time
-#import Tkinter as tk     # python 2
-#import tkFont as tkfont  # python 2
 
 class webcam:
     def __init__(self):
@@ -38,9 +28,6 @@ class webcam:
     def cap_video(self, length = 10, output_file = 'output.avi', fps = 30.0, resolution = (640,480), prepare = True, prep_time = 8):
         #timeout = time.time() + 11   # 10 seconds from now
         cap = cv2.VideoCapture(0)
-        # Define the codec and create VideoWriter object
-        #fourcc =cv2.VideoWriter_fourcc(*'DIVX')
-        #fourcc = cv2.cv.CV_FOURCC(*'DIVX')
 
 	out = cv2.VideoWriter(output_file,cv2.VideoWriter_fourcc(*'XVID'), fps, resolution)
         init_time = time.time()
@@ -55,8 +42,6 @@ class webcam:
         while(cap.isOpened()):
             ret, frame = cap.read()
             if ret==True:
-                #frame = cv2.flip(frame,0)
-                # write the flipped frame
                 if (prepare):
                     center_x = int(frame.shape[0]/2)
                     center_y = int(frame.shape[0]/2)
