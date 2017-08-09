@@ -80,15 +80,9 @@ class webcam:
                         counter-=1
                         counter_timeout+=1
                 if ((prepare and (time.time() > test_timeout)) or (not prepare)):
-                #    nrof_faces = self.check_faces(frame)
-                #    if not nrof_faces:
-                #       #print ("no face detected")
-                #       #display no face detected and reset the re-record flag
-                #        pass
-                #    if nrof_faces>1:
-                        #print("multiple faces detected")
-                 #       pass
                     out.write(frame)
+                    cv2.circle(frame,(490,15),6,(0,0,255), -1)
+                    self.draw_text(frame, text='recording', x=495, y=20, color = (0,0,255), size=1, thickness = 1)
                 cv2.imshow('frame', frame)
                 if (cv2.waitKey(1) & 0xFF == ord('x')) or (time.time() > (final_timeout)):
                     break
