@@ -269,7 +269,8 @@ class PageOne(tk.Frame):
 			messagebox.showinfo('Signed In', 'Please read the following instructions carefully and follow them!\n1. Now your face video will be recorded for 10 seconds after 5 seconds of preparation time.\n2. Please adjust your face relative to the position of the webcamera so that your face is in the center.\n')
 			self.controller.upload_video(text_entry_list[0])
 			self.controller.reset_entries(self)
-			self.controller.show_frame("StartPage")
+			self.controller.destroy()
+			#self.controller.show_frame("StartPage")
 		else:
 			pass
 
@@ -348,13 +349,14 @@ class PageTwo(tk.Frame):
 			messagebox.showinfo('Registration status', 'Successful...!\nPlease read the following instructions carefully and follow them!\n1. Now your face video will be recorded for 10 seconds after 5 seconds of preparation time.\n2. Please adjust your face relative to the position of the webcamera so that your face is in the center.\n')
 			self.controller.upload_video(text_entry_list[0])
 			self.controller.reset_entries(self)
-			self.controller.show_frame("StartPage")
+			self.controller.destroy()
+			#self.controller.show_frame("StartPage")
 		elif (flag and not agree.get()):
 			messagebox.showerror('Agreement required', 'You have to agree to the terms to proceed!\n Please agree after reviewing the terms...')
 		else:
 			pass
 
-if __name__ == "__main__":
-	app = SampleApp('/home/ovuser/FaceRecognition/Codes/openface/demos/db_users.pkl')
-	app.mainloop()
-os.system("/home/ovuser/FaceRecognition/Codes/openface/demos/classifier_webcam_facenet.py /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Groups/cv-group-114528472702/OVI-Train/TrainSet/cv-group-114528472702-run-05/Feature/classifier.pkl --model_dir models/20170512-110547")
+#if __name__ == "__main__":
+#	app = SampleApp('/home/ovuser/FaceRecognition/Codes/openface/demos/db_users.pkl')
+#	app.mainloop()
+#os.system("/home/ovuser/FaceRecognition/Codes/openface/demos/classifier_webcam_facenet.py /home/ovuser/FaceRecognition/Data/OVI-CV-03-Facenet/CV-Groups/cv-group-114528472702/OVI-Train/TrainSet/cv-group-114528472702-run-05/Feature/classifier.pkl --model_dir models/20170512-110547")
