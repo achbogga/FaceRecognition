@@ -31,7 +31,7 @@ class webcam:
     def InitializeMTCNN (self):
         sleep(random.random())
         with tf.Graph().as_default():
-            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
+            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
             sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
             with sess.as_default():
                 self.pnet, self.rnet, self.onet = detect_face.create_mtcnn(sess, None)
@@ -104,10 +104,9 @@ class webcam:
                 break
         cap.release()
         cv2.destroyAllWindows()
-    def valid_video(self, video_src):
-        cap = cv2.VideoCapture(video_src)
-        length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        for i in range(length):
+    def valid_video(self):
+        cap = cv2.VideoCapture(0)
+        for i in range(60):
             ret, frame = cap.read()
             if not (self.check_faces(frame) == 1):
 				cap.release()
@@ -232,10 +231,12 @@ class SampleApp(tk.Tk):
         num = str(len(os.listdir(output_dir))+1)
         output_video_file = os.path.join(output_dir, '_'+num+'.avi')
         camera = webcam()
+        while (not camera.valid_video()):
+			messagebox.showerror('Exactly one face should be in the frame','Either no face or multiple faces found in the webcam field of view! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
         camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
-        if (not camera.valid_video(output_video_file)):
-			messagebox.showerror('Re-record','Either no face or multiple faces found in the recording! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
-			camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
+        #if (not camera.valid_video(output_video_file)):
+		#	messagebox.showerror('Re-record','Either no face or multiple faces found in the recording! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
+		#	camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
         confirm = messagebox.askquestion('Verify','Want to see your video clip before submitting?')
         if confirm=='yes':
             camera.disp_video(output_video_file)

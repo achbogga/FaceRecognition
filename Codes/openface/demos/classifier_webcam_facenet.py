@@ -203,10 +203,11 @@ def fr_demo(args, sess, embeddings, images_placeholder, phase_train_placeholder,
         	draw_text(frame)
 		cv2.imshow('Panel Face Recognition', frame)
         	# quit the fr_demo on the press of key 's' and begin the demo gui
-        	if cv2.waitKey(1) & 0xFF == ord('s'):
+		k = cv2.waitKey(1)
+        	if k & 0xFF == ord('s'):
             		break
 		# quit the program on the press of key 'q'
-        	if cv2.waitKey(1) & 0xFF == ord('q'):
+        	elif k & 0xFF == ord('q'):
 		        exit_flag = 0
             		break
 	   # When everything is done, release the capture
