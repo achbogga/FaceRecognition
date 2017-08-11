@@ -84,6 +84,9 @@ def main(args):
                 img = img[:,:,0:3]
                             
                 bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
+                if (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37)):
+                            img = (extract_image_chips.extract_image_chips(img,np.transpose(points), args.image_size, args.image_size, 0.37))[0]
+                            bounding_boxes, points = align.detect_face.detect_face(img, minsize, pnet, rnet, onet, threshold, factor)
                 nrof_faces = bounding_boxes.shape[0]
                 #print ('Debug2.5: '+nrof_faces)
                 if nrof_faces>0:
@@ -127,13 +130,13 @@ def parse_arguments(argv):
     parser.add_argument('input_dir', type=str, help='Directory with unaligned images.')
     parser.add_argument('output_dir', type=str, help='Directory with aligned face thumbnails.')
     parser.add_argument('--image_size', type=int,
-        help='Image size (height, width) in pixels.', default=182)
+        help='Image size (height, width) in pixels.', default=160)
     parser.add_argument('--margin', type=int,
-        help='Margin for the crop around the bounding box (height, width) in pixels.', default=44)
+        help='Margin for the crop around the bounding box (height, width) in pixels.', default=32)
     parser.add_argument('--random_order', 
         help='Shuffles the order of images to enable alignment using multiple processes.', action='store_true')
     parser.add_argument('--gpu_memory_fraction', type=float,
-        help='Upper bound on the amount of GPU memory that will be used by the process.', default=1.0)
+        help='Upper bound on the amount of GPU memory that will be used by the process.', default=0.5)
     parser.add_argument('--no_text_output', help = 'does not store text output', action='store_false')
     return parser.parse_args(argv)
 
