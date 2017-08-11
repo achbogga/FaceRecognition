@@ -51,6 +51,9 @@ from scipy.ndimage.interpolation import zoom
 #from gui.webcam import draw_text
 from gui import SampleApp
 
+#Display Resolution
+W = 1920
+H = 1080
 
 #minsize = 50 # minimum size of face
 minsize = 50 # minimum size of face
@@ -202,7 +205,7 @@ def fr_demo(args, sess, embeddings, images_placeholder, phase_train_placeholder,
 		    cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(255, 0, 255), thickness=2, lineType=100)
 	draw_text(frame)
 	#zoom(frame, (1920/640,1080/480,1))
-	frame = misc.imresize(frame, (1000,1850,3), interp='bilinear')
+	frame = misc.imresize(frame, (H,W,3), interp='bilinear')
 	cv2.imshow('Panel Face Recognition', frame)
 	# quit the fr_demo on the press of key 's' and begin the demo gui
 	k = cv2.waitKey(1)
@@ -222,8 +225,8 @@ if __name__ == '__main__':
     parser.add_argument('--dlibFacePredictor', type=str, help="Path to dlib's face predictor.", default=os.path.join( dlibModelDir, "shape_predictor_68_face_landmarks.dat"))
     parser.add_argument('--imgDim', type=int, help="Default image dimension.", default=160)
     parser.add_argument('--captureDevice', type=int, default=0, help='Capture device. 0 for latop webcam and 1 for usb webcam')
-    parser.add_argument('--width', type=int, default=1850)
-    parser.add_argument('--height', type=int, default=1000)
+    parser.add_argument('--width', type=int, default=W)
+    parser.add_argument('--height', type=int, default=H)
     parser.add_argument('--threshold', type=float, default=0.3)
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--verbose', action='store_true')
