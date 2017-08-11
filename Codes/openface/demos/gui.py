@@ -295,7 +295,7 @@ class SampleApp(tk.Tk):
 
 	def upload_video(self, username):
 		output_db = os.path.join(os.getcwd(),'db')
-		output_dir = os.path.join(output_db,username)
+		output_dir = os.path.join(output_db,username.split('@')[0])
 		if not os.path.isdir(output_dir):
 			os.makedirs(output_dir)
 		num = str(len(os.listdir(output_dir))+1)
