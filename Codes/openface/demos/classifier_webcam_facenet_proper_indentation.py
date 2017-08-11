@@ -46,7 +46,6 @@ import facenet
 
 from time import sleep
 from scipy import misc
-from scipy.ndimage.interpolation import zoom
 
 #from gui.webcam import draw_text
 from gui import SampleApp
@@ -71,7 +70,7 @@ def draw_text(frame, text='Please press s to sign up!', x=5, y=50, color=(200,10
 def InitializeMTCNN ():
     sleep(random.random())
     with tf.Graph().as_default():
-	gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+	gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
 	sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
 	with sess.as_default():
 	    pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
@@ -158,9 +157,8 @@ def fr_demo(args, sess, embeddings, images_placeholder, phase_train_placeholder,
     while True:
 	ret, frame = video_capture.read()
 	#print(ret, frame.shape)
-	frame = misc.imresize(frame,(480,640,3),interp='bilinear')
-	#zoom(frame, (640/1920, 480/1080, 1))
-	persons, confidences, boxes = infer(frame, args, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, le, clf, mtcnn_rectangle_size_threshold)
+	t_img = misc.imresize(frame,(640,480),interp='bilinear')
+	persons, confidences, boxes = infer(t_img, args, sess, embeddings, images_placeholder, phase_train_placeholder, pnet, rnet, onet, le, clf, mtcnn_rectangle_size_threshold)
 	print "P: " + str(persons) + " C: " + str(confidences)
 	try:
 	    # append with two floating point precision
@@ -175,11 +173,10 @@ def fr_demo(args, sess, embeddings, images_placeholder, phase_train_placeholder,
 		persons[i] = "_unknown"
 
 	width = frame.shape[1]
-	#width = t_img.shape[1]
-	frame = cv2.flip(frame, 1)
+	#frame = cv2.flip(frame, 1)
 	#t_img = cv2.flip(t_img,1)
-	#h_f = 3
-	#v_f = 2.25
+	h_f = 3
+	v_f = 2.25
 	#for box in boxes:
 	#    box = dlib.rectangle(left = np.minimum(int((box.left()+32)*h_f), args.width), right=np.maximum(int((box.right()-32)*h_f),0), top = np.minimum(int((box.top()+32)*v_f), args.height), bottom = np.maximum(int((box.bottom()-32)*v_f),0))
 
@@ -187,7 +184,7 @@ def fr_demo(args, sess, embeddings, images_placeholder, phase_train_placeholder,
 	    bl = (width - box.right(), box.bottom())
 	    tr = (width - box.left(), box.top())
 	    if (box.right() - box.left() <= mtcnn_rectangle_size_threshold):
-		cv2.rectangle(frame, bl, tr, color=(0, 255, 0), thickness=1, lineType=100)
+		cv2.rectangle(t_img, bl, tr, color=(0, 255, 0), thickness=1, lineType=100)
 		continue
 	    if confidence <= args.threshold:
 		name = "Stranger"
@@ -195,14 +192,14 @@ def fr_demo(args, sess, embeddings, images_placeholder, phase_train_placeholder,
 		name = person
 	    if (box.right() - box.left() > mtcnn_rectangle_size_threshold):
 		if (name == "Stranger"):
-		    cv2.rectangle(frame, bl, tr, color=(0, 255, 255), thickness=1, lineType=100)
-		    cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(0, 255, 255), thickness=2, lineType=100)
+		    cv2.rectangle(t_img, bl, tr, color=(0, 255, 255), thickness=1, lineType=100)
+		    cv2.putText(t_img, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(0, 255, 255), thickness=2, lineType=100)
 		else:
-		    cv2.rectangle(frame, bl, tr, color=(255, 0, 255), thickness=1, lineType=100)
-		    cv2.putText(frame, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(255, 0, 255), thickness=2, lineType=100)
-	draw_text(frame)
-	#zoom(frame, (1920/640,1080/480,1))
-	frame = misc.imresize(frame, (1000,1850,3), interp='bilinear')
+		    cv2.rectangle(t_img, bl, tr, color=(255, 0, 255), thickness=1, lineType=100)
+		    cv2.putText(t_img, name, (width - box.right() - 5, box.top() - 10), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(255, 0, 255), thickness=2, lineType=100)
+
+	draw_text(t_img)
+	frame = misc.imresize(t_img, (1920,1080), interp='bilinear')
 	cv2.imshow('Panel Face Recognition', frame)
 	# quit the fr_demo on the press of key 's' and begin the demo gui
 	k = cv2.waitKey(1)
@@ -222,8 +219,8 @@ if __name__ == '__main__':
     parser.add_argument('--dlibFacePredictor', type=str, help="Path to dlib's face predictor.", default=os.path.join( dlibModelDir, "shape_predictor_68_face_landmarks.dat"))
     parser.add_argument('--imgDim', type=int, help="Default image dimension.", default=160)
     parser.add_argument('--captureDevice', type=int, default=0, help='Capture device. 0 for latop webcam and 1 for usb webcam')
-    parser.add_argument('--width', type=int, default=1850)
-    parser.add_argument('--height', type=int, default=1000)
+    parser.add_argument('--width', type=int, default=1920)
+    parser.add_argument('--height', type=int, default=1080)
     parser.add_argument('--threshold', type=float, default=0.3)
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--verbose', action='store_true')

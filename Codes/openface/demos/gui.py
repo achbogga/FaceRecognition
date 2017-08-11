@@ -142,7 +142,7 @@ class webcam:
 	#           cap.release()
 	#           return 0
 	#    return 1
-	def prep_video(self, resolution = (1366,768), prep_time = 15):
+	def prep_video(self, resolution = (1366,768), prep_time = 5):
 		#timeout = time.time() + 11   # 10 seconds from now
 		cap = cv2.VideoCapture(0)
 		cv2.namedWindow('Face Recognition DC Program', cv2.WINDOW_NORMAL)
@@ -304,18 +304,18 @@ class SampleApp(tk.Tk):
 		while (not camera.prep_video()):
 			pass
 			#messagebox.showerror('Exactly one face should be in the frame','Either no face or multiple faces found in the webcam field of view! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
-		camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (1366,768), prepare = True, prep_time = 4)
+		camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (1280, 960), prepare = True, prep_time = 4)
 		#if (not camera.valid_video(output_video_file)):
 		#   messagebox.showerror('Re-record','Either no face or multiple faces found in the recording! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
 		#   camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
-		confirm = messagebox.askquestion('Verify','Want to see your video clip before submitting?')
-		if confirm=='yes':
-			camera.disp_video(output_video_file)
-			redo = messagebox.askquestion('Re-record','Want to record your video clip again before submitting?')
-			if redo=='yes':
-				while (not camera.prep_video()):
-					pass
-				camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (1366,768), prepare = True, prep_time = 5)
+		#confirm = messagebox.askquestion('Verify','Want to see your video clip before submitting?')
+		#if confirm=='yes':
+		#	camera.disp_video(output_video_file)
+		#	redo = messagebox.askquestion('Re-record','Want to record your video clip again before submitting?')
+		#	if redo=='yes':
+		#		while (not camera.prep_video()):
+		#			pass
+		#		camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (1366,768), prepare = True, prep_time = 5)
 		messagebox.showinfo('video upload', 'Successful...!')
 
 class StartPage(tk.Frame):
