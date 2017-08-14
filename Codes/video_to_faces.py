@@ -28,5 +28,5 @@ def video_to_faces(video_src, output_dir):
 		return 0
 	cap.release()
 	cv2.destroyAllWindows()
-if __name__ == "__main__":
-   video_to_faces('test.avi', 'test_images')
+#if __name__ == "__main__":
+#   video_to_faces('test.avi', 'test_images')

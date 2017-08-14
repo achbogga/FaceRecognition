@@ -18,6 +18,7 @@ import pyscreenshot as ImageGrab
 
 import numpy as np
 import cv2
+print("opencv version: "+ str(cv2.__version__))
 import time
 
 import detect_face
@@ -78,7 +79,7 @@ class webcam:
 	def draw_text(self, frame, text, x, y, color=(255,0,255), thickness=4, size=3):
 		if x is not None and y is not None:
 			cv2.putText(frame, text, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, size, color, thickness)
-	def cap_video(self, length = 10, output_file = 'output.avi', fps = 30.0, resolution = (1366,768), prepare = True, prep_time = 4):
+	def cap_video(self, length = 10, output_file = 'output.avi', fps = 30.0, resolution = (640,480), prepare = True, prep_time = 4):
 		#timeout = time.time() + 11   # 10 seconds from now
 		cap = cv2.VideoCapture(0)
 		out = cv2.VideoWriter(output_file,cv2.VideoWriter_fourcc(*'XVID'), fps, resolution)
@@ -120,7 +121,7 @@ class webcam:
 		out.release()
 		cv2.destroyAllWindows()
 	def disp_video(self, video_src, fps = 30):
-		cap = cv2.VideoCapture(video_src)
+		cap = cv2.VideoCapture(video_src, cv2.CAP_FFMPEG)
 		cv2.namedWindow('Face Recognition DC Program', cv2.WINDOW_NORMAL)
 		cv2.setWindowProperty('Face Recognition DC Program', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 		length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -142,7 +143,7 @@ class webcam:
 	#           cap.release()
 	#           return 0
 	#    return 1
-	def prep_video(self, resolution = (1366,768), prep_time = 5):
+	def prep_video(self, resolution = (640,480), prep_time = 5):
 		#timeout = time.time() + 11   # 10 seconds from now
 		cap = cv2.VideoCapture(0)
 		cv2.namedWindow('Face Recognition DC Program', cv2.WINDOW_NORMAL)
@@ -304,7 +305,7 @@ class SampleApp(tk.Tk):
 		while (not camera.prep_video()):
 			pass
 			#messagebox.showerror('Exactly one face should be in the frame','Either no face or multiple faces found in the webcam field of view! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
-		camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (1280, 960), prepare = True, prep_time = 4)
+		camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640, 480), prepare = True, prep_time = 4)
 		#if (not camera.valid_video(output_video_file)):
 		#   messagebox.showerror('Re-record','Either no face or multiple faces found in the recording! \nPlease record again and make sure your face is in the center and no one else is in the frame! \nThanks!')
 		#   camera.cap_video(length = 10, output_file = output_video_file, fps = 30.0, resolution = (640,480), prepare = True, prep_time = 5)
